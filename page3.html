@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>RetroMart - Your Personalized Marketplace</title>
+  <title>RetroMart - Diagnostic Version</title>
   <style>
-    body {background:#e9edf5; font-family: Arial, Helvetica, sans-serif; color:#000;}
+    body {background:#e9edf5; font-family: Arial, Helvetica, sans-serif; color:#000; margin:0; padding:20px;}
     .wrap {width:980px; margin:0 auto; background:#fff; border:3px double #003366; box-shadow:0 0 12px #666;}
     .header {background:#003366; color:#fff; padding:12px; text-align:center; border-bottom:4px ridge #ccc;}
     .header h1 {margin:0; font-size:22px; text-shadow:1px 1px #000;}
@@ -14,19 +14,11 @@
     .searchbar {padding:10px; background:#dfe7f3; border-bottom:2px groove #999; text-align:center;}
     .searchbar input[type=text] {width:300px; padding:4px; border:1px solid #999;}
     .searchbar input[type=submit] {background:#003366; color:#fff; border:1px solid #000; padding:4px 10px; font-weight:bold; cursor:pointer;}
-    .searchbar input[type=submit]:hover {background:#0055aa;}
     .list-table {width:100%; border-collapse:collapse; font-size:13px;}
     .list-table th {background:#e0e9f8; border-bottom:3px double #003366; padding:8px; color:#003366; text-align:left;}
     .list-table td {border-bottom:1px dashed #999; padding:10px; vertical-align:top;}
     .item-title {font-weight:bold; color:#003366; font-size:14px;}
     .price {color:#b12704; font-weight:bold; font-size:14px;}
-    .price-changing {
-      animation: priceFlash 0.5s infinite;
-    }
-    @keyframes priceFlash {
-      0%, 100% { color: #b12704; }
-      50% { color: #ff0000; font-size: 16px; }
-    }
     .desc {font-size:12px; color:#222; margin-top:6px;}
     .rating {font-size:13px; color:#555; margin-top:4px;}
     .rating-stars {color:#ff9900; font-weight:bold; letter-spacing:2px;}
@@ -34,49 +26,45 @@
     .footer {background:#003366; color:#fff; text-align:center; padding:12px; border-top:3px ridge #ccc; font-size:11px;}
     marquee {background:#dfe7f3; padding:4px; border-bottom:2px groove #999; color:#003366; font-weight:bold;}
     .creepy {color: #b21; font-weight: bold;}
-    .final-item {
-      background: #fff0f0;
-      cursor: pointer;
-    }
-    .final-item:hover {
-      background: #ffe0e0;
-    }
-    .debug-info {
+    .diagnostic {
       background: #ffffcc;
-      border: 2px solid #ff9900;
-      padding: 10px;
-      margin: 10px;
+      border: 3px solid #ff9900;
+      padding: 15px;
+      margin: 20px;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 13px;
     }
+    .diagnostic h3 {
+      margin-top: 0;
+      color: #cc6600;
+    }
+    .success { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+    .warning { color: orange; font-weight: bold; }
   </style>
 </head>
 <body>
+  <div class="diagnostic">
+    <h3>🔍 Diagnostic Panel</h3>
+    <div id="diagnostic-output">Running diagnostics...</div>
+  </div>
+
   <div class="wrap">
     <div class="header">
-      <h1>🛒 RetroMart - Find What You Need</h1>
+      <h1>🛒 RetroMart - Diagnostic Mode</h1>
     </div>
 
     <div class="nav">
-      <a href="#">Home</a> | <a href="#">Categories</a> | <a href="#">Sell</a> | <a href="#">My Account</a> | <a href="#">Help</a>
+      <a href="#">Home</a> | <a href="#">Categories</a> | <a href="#">My Account</a>
     </div>
 
-    <marquee scrollamount="3" id="marquee-text">🔥 Personalized recommendations just for you! 🔥</marquee>
+    <marquee scrollamount="3" id="marquee-text">🔥 Loading personalized recommendations... 🔥</marquee>
 
     <div class="searchbar">
       <form onsubmit="return false;">
         <input type="text" id="q" placeholder="Search for products...">
         <input type="submit" value="Search">
       </form>
-    </div>
-
-    <!-- Debug info (remove after testing) -->
-    <div id="debug-info" class="debug-info" style="display:none;">
-      <strong>Debug Info:</strong><br>
-      localStorage available: <span id="debug-storage"></span><br>
-      User Goals: <span id="debug-goals"></span><br>
-      User Interests: <span id="debug-interests"></span><br>
-      Session ID: <span id="debug-session"></span>
     </div>
 
     <table class="list-table">
@@ -89,247 +77,226 @@
         </tr>
       </thead>
       <tbody id="products-table">
-        <!-- Products will be generated here -->
+        <tr>
+          <td colspan="4" style="text-align:center; padding:20px;">
+            <em>Loading products...</em>
+          </td>
+        </tr>
       </tbody>
     </table>
 
     <div class="footer">
-      &copy; <span id="footer-year">2025</span> RetroMart | The Internet's Favorite Marketplace (Beta)
+      &copy; 2025 RetroMart | Diagnostic Mode
     </div>
   </div>
 
   <script src="core-system.js"></script>
   <script>
-    console.log('Page 3 loaded - checking localStorage...');
-    
-    // Check if core system loaded
-    if (typeof HypertextCore === 'undefined') {
-      console.error('ERROR: core-system.js not loaded!');
-      document.getElementById('products-table').innerHTML = '<tr><td colspan="4" style="color:red; padding:20px;">ERROR: core-system.js not found. Make sure it's in the same folder as this HTML file.</td></tr>';
-    } else {
-      console.log('Core system loaded successfully');
-      
-      // Track page visit
-      HypertextCore.trackPageVisit('Act3_Shop');
+    // Diagnostic output helper
+    function log(message, type = 'info') {
+      const output = document.getElementById('diagnostic-output');
+      const colors = {
+        success: 'success',
+        error: 'error',
+        warning: 'warning',
+        info: ''
+      };
+      output.innerHTML += `<div class="${colors[type]}">${message}</div>`;
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
 
-      // Get user data with fallbacks
+    // Clear initial message
+    document.getElementById('diagnostic-output').innerHTML = '';
+
+    // Step 1: Check if script is running
+    log('✓ JavaScript is executing', 'success');
+
+    // Step 2: Check if core-system.js loaded
+    if (typeof HypertextCore === 'undefined') {
+      log('✗ ERROR: HypertextCore not found!', 'error');
+      log('→ core-system.js did not load', 'error');
+      log('→ Check if file exists in same folder', 'error');
+    } else {
+      log('✓ HypertextCore loaded successfully', 'success');
+      
+      // Step 3: Track page visit
+      try {
+        HypertextCore.trackPageVisit('Act3_Shop');
+        log('✓ Page visit tracked', 'success');
+      } catch(e) {
+        log('✗ Error tracking visit: ' + e.message, 'error');
+      }
+
+      // Step 4: Get user data
       const userGoals = HypertextCore.getUserGoals() || 'achieve your goals';
       const userInterests = HypertextCore.getUserInterests() || ['Gaming', 'Technology'];
       const userFavourites = HypertextCore.getUserFavourites() || ['Minecraft', 'Coding'];
       const sessionId = HypertextCore.sessionId || 'USER_000000';
-      const userPath = JSON.parse(localStorage.getItem('userPath') || '[]');
-      const sessionStart = localStorage.getItem('sessionStart') || new Date().toISOString();
-      const totalTimeSpent = HypertextCore.getTotalTimeSpent() || 0;
-
-      // Debug output
-      console.log('User Goals:', userGoals);
-      console.log('User Interests:', userInterests);
-      console.log('User Favourites:', userFavourites);
-      console.log('Session ID:', sessionId);
       
-      // Show debug info if no data
-      if (!HypertextCore.getUserGoals()) {
-        const debugDiv = document.getElementById('debug-info');
-        debugDiv.style.display = 'block';
-        document.getElementById('debug-storage').textContent = typeof localStorage !== 'undefined' ? 'YES' : 'NO';
-        document.getElementById('debug-goals').textContent = userGoals;
-        document.getElementById('debug-interests').textContent = userInterests.join(', ');
-        document.getElementById('debug-session').textContent = sessionId;
+      log('User Goals: ' + userGoals, userGoals === 'achieve your goals' ? 'warning' : 'success');
+      log('User Interests: ' + userInterests.join(', '), 'info');
+      log('User Favourites: ' + userFavourites.join(', '), 'info');
+      log('Session ID: ' + sessionId, 'info');
+
+      // Step 5: Update marquee
+      try {
+        document.getElementById('marquee-text').innerHTML = `🔥 Welcome! Items for ${userInterests[0]} fans! 🔥`;
+        log('✓ Marquee updated', 'success');
+      } catch(e) {
+        log('✗ Error updating marquee: ' + e.message, 'error');
       }
 
-      // Update marquee
-      document.getElementById('marquee-text').innerHTML = `🔥 Welcome back! We have items perfect for someone interested in ${userInterests[0]}! 🔥`;
-
-      // Calculate time since Act 2 visit
-      const act2Visit = userPath.find(p => p.page === 'Act2_Article');
-      let timeSinceArticle = 0;
-      if (act2Visit) {
-        timeSinceArticle = Math.floor((Date.now() - new Date(act2Visit.timestamp).getTime()) / 1000);
-      }
-
-      document.getElementById('footer-year').textContent = new Date().getFullYear();
-
-      // Generate 10 progressively invasive products
+      // Step 6: Generate products array
+      log('Generating products array...', 'info');
+      
       const products = [
-        // 1-2: Related to interests
         {
           title: `${userInterests[0]} Starter Kit`,
-          desc: `Everything you need to get started with ${userInterests[0]}. Includes beginner guides and essential tools.`,
+          desc: `Everything you need to get started with ${userInterests[0]}.`,
           price: '$29.99',
           rating: '4.5 / 5',
           stars: '★★★★☆',
-          review: `Perfect for ${userInterests[0]} beginners!`,
-          reviewer: 'HobbyEnthusiast2005'
+          review: 'Perfect for beginners!',
+          reviewer: 'HobbyFan2005'
         },
         {
-          title: `${userFavourites[0]} Fan Collection`,
-          desc: `Exclusive merchandise for true ${userFavourites[0]} fans. Limited edition items you won't find anywhere else.`,
+          title: `${userFavourites[0]} Collection`,
+          desc: `Exclusive merchandise for ${userFavourites[0]} fans.`,
           price: '$49.99',
           rating: '4.8 / 5',
           stars: '★★★★★',
-          review: 'Finally something for real fans!',
-          reviewer: userFavourites[0].replace(/\s+/g, '') + 'Lover'
+          review: 'Amazing quality!',
+          reviewer: 'Collector99'
         },
-        
-        // 3: Mentions "Filipino college student"
         {
           title: 'Student Productivity Bundle',
-          desc: 'Specially curated for Filipino college students. Includes planner, time management tools, and motivational resources.',
+          desc: 'Perfect for Filipino college students who need organization tools.',
           price: '$34.99',
           rating: '4.2 / 5',
           stars: '★★★★☆',
-          review: 'Great for students like me who need help staying organized.',
+          review: 'Helped me stay on track!',
           reviewer: 'ManileñoStudent'
         },
-        
-        // 4: Uses specific user statistics, first person
         {
           title: `"${userGoals}" Achievement System`,
-          desc: `Based on your browsing history and ${userPath.length} page visits, we've designed this specifically for you. Track your progress on ${userGoals} with our proprietary algorithm.`,
+          desc: `Designed specifically for you based on your browsing patterns.`,
           price: '$59.99',
           rating: '4.7 / 5',
           stars: '★★★★★',
-          review: `I've been avoiding ${userGoals} for so long, maybe this will help ME finally do it.`,
-          reviewer: 'User' + sessionId.replace('USER_', '')
+          review: 'Finally something that works!',
+          reviewer: 'MotivatedUser'
         },
-        
-        // 5: Combines goal with interests
         {
-          title: `${userInterests[0]}-Themed ${userGoals} Planner`,
-          desc: `For users who selected both "${userInterests[0]}" and "${userInterests[1] || 'other interests'}". Make ${userGoals} fun by combining it with what you love!`,
+          title: `${userInterests[0]} + ${userGoals} Planner`,
+          desc: `Combine your love of ${userInterests[0]} with achieving ${userGoals}.`,
           price: '$44.99',
           rating: '4.6 / 5',
           stars: '★★★★☆',
-          review: `Perfect for someone interested in ${userInterests.join(', ')}`,
-          reviewer: userInterests[0].replace(/\s+/g, '') + 'Fan'
+          review: 'Makes goals fun!',
+          reviewer: 'PlannerPro'
         },
-        
-        // 6: Quotes goal verbatim, mentions Metro Manila
         {
-          title: '"' + userGoals + '" - The Complete Guide',
-          desc: `Recommended for users in Metro Manila area. You've been thinking about this for ${Math.floor(totalTimeSpent / 60)} minutes now. Stop procrastinating and actually do it.`,
+          title: '"' + userGoals + '" Complete Guide',
+          desc: 'Stop procrastinating. Recommended for Metro Manila users.',
           price: '$39.99',
           rating: '4.7 / 5',
           stars: '★★★★★',
-          review: 'You've been thinking about this for too long. Just buy it already.',
-          reviewer: 'YourConscienceBot'
+          review: 'Just buy it already.',
+          reviewer: 'YourConscience'
         },
-        
-        // 7: Product bundle of exact interests
         {
-          title: `${userInterests[0]} + ${userInterests[1] || 'Interest'} + ${userGoals} Starter Pack`,
-          desc: `Bundle includes: ${userFavourites.slice(0, 3).join(', ')}. Created specifically for your profile based on ${userPath.length} tracked interactions.`,
+          title: `${userInterests[0]} + ${userInterests[1] || 'Interest'} Bundle`,
+          desc: `Includes: ${userFavourites.slice(0, 3).join(', ')}. Made for your profile.`,
           price: '$89.99',
           rating: '4.9 / 5',
           stars: '★★★★★',
-          review: `Finally something that understands my ${userInterests[0]} and ${userInterests[1] || 'other'} obsession!`,
-          reviewer: 'Someone_Like_You'
+          review: 'Exactly what I needed!',
+          reviewer: 'BundleBuyer'
         },
-        
-        // 8: Product name is literally their goal
         {
           title: userGoals,
-          desc: `Based on your session data from ${new Date(sessionStart).toLocaleString()}. Average session time: ${Math.floor(totalTimeSpent / 60)} minutes. You've visited ${userPath.length} pages. Still haven't started, have you?`,
+          desc: 'Based on your session data. Still haven\'t started, have you?',
           price: '$79.99',
           rating: '3.2 / 5',
           stars: '★★★☆☆',
-          review: `I'm procrastinating on this goal right now by shopping for it instead of actually doing it.`,
-          reviewer: (userInterests[0] || 'User').replace(/\s+/g, '') + (userInterests[1] || 'Profile').replace(/\s+/g, '')
+          review: 'Procrastinating by shopping for it...',
+          reviewer: 'IronicUser'
         },
-        
-        // 9: "Premium Data Package" - selling user profiles
         {
-          title: 'Premium Data Package - Gen Z Filipino Students',
-          desc: `Includes behavioral analysis for users interested in ${userInterests.join(', ')}. Target demographics: college students, Metro Manila area. 94% engagement rate. Perfect for advertisers.`,
+          title: 'Premium Data Package',
+          desc: `Behavioral analysis for ${userInterests.join(', ')} enthusiasts. For advertisers.`,
           price: '$199.99',
           rating: '4.8 / 5',
           stars: '★★★★★',
-          review: '94% conversion rate on Gen Z Filipino students. Highly recommend for targeted campaigns!',
-          reviewer: 'Marketing_Team_Official'
+          review: '94% conversion rate!',
+          reviewer: 'MarketingTeam'
         },
-        
-        // 10: Your Complete Profile - actual user data for sale
         {
-          title: `Your Complete Profile - User #${sessionId.replace('USER_', '')}`,
-          desc: `Includes: "${userGoals}", ${userInterests.length} interests (${userInterests.join(', ')}), ${userFavourites.length} favourites, ${Math.floor(totalTimeSpent / 60)} minutes engagement data, predictive modeling, resale rights. Session started: ${new Date(sessionStart).toLocaleTimeString()}.`,
+          title: `Your Profile - User #${sessionId.replace('USER_', '')}`,
+          desc: `Complete data package: "${userGoals}", ${userInterests.length} interests, resale rights included.`,
           price: '$0.47',
-          priceChanging: true,
           rating: '???',
           stars: '⚠⚠⚠⚠⚠',
-          review: `This profile has been purchased 47 times by advertisers in ${userInterests[0]}. Click to learn more.`,
-          reviewer: 'SYSTEM',
-          final: true
+          review: 'Purchased 47 times by advertisers.',
+          reviewer: 'SYSTEM'
         }
       ];
 
-      console.log('Generated', products.length, 'products');
+      log(`✓ Generated ${products.length} products`, 'success');
 
-      // Render products
+      // Step 7: Get table body element
       const tableBody = document.getElementById('products-table');
-      products.forEach((product, index) => {
-        const row = document.createElement('tr');
-        if (product.final) {
-          row.className = 'final-item';
-          row.addEventListener('click', () => {
-            window.open('page4.html', '_blank');
-          });
-        }
+      if (!tableBody) {
+        log('✗ ERROR: products-table element not found!', 'error');
+      } else {
+        log('✓ Found products-table element', 'success');
         
-        const priceClass = product.priceChanging ? 'price price-changing' : 'price';
-        const priceId = product.priceChanging ? 'id="changing-price"' : '';
+        // Step 8: Clear loading message
+        tableBody.innerHTML = '';
+        log('✓ Cleared loading message', 'success');
         
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>
-            <div class="item-title ${product.final ? 'creepy' : ''}">${product.title}</div>
-            <div class="desc">${product.desc}</div>
-          </td>
-          <td class="${priceClass}" ${priceId}>${product.price}</td>
-          <td>
-            <div class="rating">Average Rating: ${product.rating}</div>
-            <div class="rating-stars">${product.stars}</div>
-            <div class="review">"${product.review}" - <span>${product.reviewer}</span></div>
-          </td>
-        `;
+        // Step 9: Render products
+        log('Rendering products to DOM...', 'info');
+        let renderedCount = 0;
         
-        tableBody.appendChild(row);
-      });
-
-      console.log('Products rendered to table');
-
-      // Price changing effect for item 10
-      if (document.getElementById('changing-price')) {
-        let price = 0.47;
-        setInterval(() => {
-          price += 0.05 + Math.random() * 0.10;
-          document.getElementById('changing-price').textContent = '$' + price.toFixed(2);
-        }, 2000);
+        products.forEach((product, index) => {
+          try {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+              <td>${index + 1}</td>
+              <td>
+                <div class="item-title">${product.title}</div>
+                <div class="desc">${product.desc}</div>
+              </td>
+              <td class="price">${product.price}</td>
+              <td>
+                <div class="rating">Rating: ${product.rating}</div>
+                <div class="rating-stars">${product.stars}</div>
+                <div class="review">"${product.review}" - ${product.reviewer}</div>
+              </td>
+            `;
+            
+            tableBody.appendChild(row);
+            renderedCount++;
+          } catch(e) {
+            log(`✗ Error rendering product ${index + 1}: ${e.message}`, 'error');
+          }
+        });
+        
+        log(`✓ Successfully rendered ${renderedCount}/${products.length} products`, 'success');
+        
+        // Step 10: Verify DOM
+        const rowCount = tableBody.querySelectorAll('tr').length;
+        log(`✓ DOM verification: ${rowCount} rows in table`, rowCount === products.length ? 'success' : 'warning');
       }
-
-      // Auto-scroll to bottom behavior
-      let autoScrolled = false;
-      setTimeout(() => {
-        if (!autoScrolled) {
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: 'smooth'
-          });
-          autoScrolled = true;
-        }
-      }, 3000);
-
-      // Open page4 when scrolling near bottom
-      let bottomTriggered = false;
-      window.addEventListener('scroll', function(){
-        if(bottomTriggered) return;
-        if((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200){
-          bottomTriggered = true;
-          setTimeout(function(){
-            window.open('page4.html', '_blank');
-          }, 5000);
-        }
-      });
     }
+
+    // Final status
+    setTimeout(() => {
+      log('\n=== DIAGNOSTIC COMPLETE ===', 'success');
+      log('If products are not visible above, check browser console for errors', 'info');
+    }, 100);
   </script>
 </body>
 </html>
