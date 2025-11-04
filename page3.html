@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RetroMart - Your Personalized Marketplace</title>
+  <style>
+    body {background:#e9edf5; font-family: Arial, Helvetica, sans-serif; color:#000;}
+    .wrap {width:980px; margin:0 auto; background:#fff; border:3px double #003366; box-shadow:0 0 12px #666;}
+    .header {background:#003366; color:#fff; padding:12px; text-align:center; border-bottom:4px ridge #ccc;}
+    .header h1 {margin:0; font-size:22px; text-shadow:1px 1px #000;}
+    .nav {background:#f2f6fa; border-bottom:2px solid #003366; text-align:center; padding:6px; font-size:12px;}
+    .nav a {color:#003366; text-decoration:none; margin:0 6px;}
+    .nav a:hover {text-decoration:underline;}
+    .searchbar {padding:10px; background:#dfe7f3; border-bottom:2px groove #999; text-align:center;}
+    .searchbar input[type=text] {width:300px; padding:4px; border:1px solid #999;}
+    .searchbar input[type=submit] {background:#003366; color:#fff; border:1px solid #000; padding:4px 10px; font-weight:bold; cursor:pointer;}
+    .searchbar input[type=submit]:hover {background:#0055aa;}
+    .list-table {width:100%; border-collapse:collapse; font-size:13px;}
+    .list-table th {background:#e0e9f8; border-bottom:3px double #003366; padding:8px; color:#003366; text-align:left;}
+    .list-table td {border-bottom:1px dashed #999; padding:10px; vertical-align:top;}
+    .item-title {font-weight:bold; color:#003366; font-size:14px;}
+    .price {color:#b12704; font-weight:bold; font-size:14px;}
+    .price-changing {
+      animation: priceFlash 0.5s infinite;
+    }
+    @keyframes priceFlash {
+      0%, 100% { color: #b12704; }
+      50% { color: #ff0000; font-size: 16px; }
+    }
+    .desc {font-size:12px; color:#222; margin-top:6px;}
+    .rating {font-size:13px; color:#555; margin-top:4px;}
+    .rating-stars {color:#ff9900; font-weight:bold; letter-spacing:2px;}
+    .review {font-style:italic; color:#333; margin-top:4px; font-size:12px;}
+    .footer {background:#003366; color:#fff; text-align:center; padding:12px; border-top:3px ridge #ccc; font-size:11px;}
+    marquee {background:#dfe7f3; padding:4px; border-bottom:2px groove #999; color:#003366; font-weight:bold;}
+    .creepy {color: #b21; font-weight: bold;}
+    .final-item {
+      background: #fff0f0;
+      cursor: pointer;
+    }
+    .final-item:hover {
+      background: #ffe0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>🛒 RetroMart - Find What You Need</h1>
+    </div>
+
+    <div class="nav">
+      <a href="#">Home</a> | <a href="#">Categories</a> | <a href="#">Sell</a> | <a href="#">My Account</a> | <a href="#">Help</a>
+    </div>
+
+    <marquee scrollamount="3">🔥 Personalized recommendations just for you! 🔥</marquee>
+
+    <div class="searchbar">
+      <form onsubmit="return false;">
+        <input type="text" id="q" placeholder="Search for products...">
+        <input type="submit" value="Search">
+      </form>
+    </div>
+
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th style="width:5%">#</th>
+          <th style="width:45%">Item</th>
+          <th style="width:15%">Price</th>
+          <th style="width:35%">Review & Rating</th>
+        </tr>
+      </thead>
+      <tbody id="products-table">
+        <!-- Products will be generated here -->
+      </tbody>
+    </table>
+
+    <div class="footer">
+      &copy; <span id="footer-year">2025</span> RetroMart | The Internet's Favorite Marketplace (Beta)
+    </div>
+  </div>
+
+  <script src="core-system.js"></script>
+  <script>
+    // Track page visit
+    HypertextCore.trackPageVisit('Act3_Shop');
+
+    // Get user data
+    const userGoals = HypertextCore.getUserGoals();
+    const userInterests = HypertextCore.getUserInterests();
+    const userFavourites = HypertextCore.getUserFavourites();
+    const sessionId = HypertextCore.sessionId;
+    const userPath = JSON.parse(localStorage.getItem('userPath') || '[]');
+    const sessionStart = localStorage.getItem('sessionStart');
+    const totalTimeSpent = HypertextCore.getTotalTimeSpent();
+
+    // Calculate time since Act 2 visit
+    const act2Visit = userPath.find(p => p.page === 'Act2_Article');
+    let timeSinceArticle = 0;
+    if (act2Visit) {
+      timeSinceArticle = Math.floor((Date.now() - new Date(act2Visit.timestamp).getTime()) / 1000);
+    }
+
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+    // Generate 10 progressively invasive products
+    const products = [
+      // 1-2: Related to interests
+      {
+        title: `${userInterests[0] || 'Hobby'} Starter Kit`,
+        desc: `Everything you need to get started with ${userInterests[0] || 'your hobby'}. Includes beginner guides and essential tools.`,
+        price: '$29.99',
+        rating: '4.5 / 5',
+        stars: '★★★★☆',
+        review: `Perfect for ${userInterests[0] || 'hobby'} beginners!`,
+        reviewer: 'HobbyEnthusiast2005'
+      },
+      {
+        title: `${userFavourites[0] || 'Product'} Fan Collection`,
+        desc: `Exclusive merchandise for true ${userFavourites[0] || 'product'} fans. Limited edition items you won't find anywhere else.`,
+        price: '$49.99',
+        rating: '4.8 / 5',
+        stars: '★★★★★',
+        review: 'Finally something for real fans!',
+        reviewer: userFavourites[0] ? userFavourites[0].replace(/\s+/g, '') + 'Lover' : 'SuperFan'
+      },
+      
+      // 3: Mentions "Filipino college student"
+      {
+        title: 'Student Productivity Bundle',
+        desc: 'Specially curated for Filipino college students. Includes planner, time management tools, and motivational resources.',
+        price: '$34.99',
+        rating: '4.2 / 5',
+        stars: '★★★★☆',
+        review: 'Great for students like me who need help staying organized.',
+        reviewer: 'ManileñoStudent'
+      },
+      
+      // 4: Uses specific user statistics, first person
+      {
+        title: `"${userGoals}" Achievement System`,
+        desc: `Based on your browsing history and ${userPath.length} page visits, we've designed this specifically for you. Track your progress on ${userGoals} with our proprietary algorithm.`,
+        price: '$59.99',
+        rating: '4.7 / 5',
+        stars: '★★★★★',
+        review: `I've been avoiding ${userGoals} for so long, maybe this will help ME finally do it.`,
+        reviewer: 'User' + sessionId.replace('USER_', '')
+      },
+      
+      // 5: Combines goal with interests
+      {
+        title: `${userInterests[0]}-Themed ${userGoals} Planner`,
+        desc: `For users who selected both "${userInterests[0]}" and "${userInterests[1] || 'other interests'}". Make ${userGoals} fun by combining it with what you love!`,
+        price: '$44.99',
+        rating: '4.6 / 5',
+        stars: '★★★★☆',
+        review: `Perfect for someone interested in ${userInterests.join(', ')}`,
+        reviewer: userInterests[0] ? userInterests[0].replace(/\s+/g, '') + 'Fan' : 'InterestedBuyer'
+      },
+      
+      // 6: Quotes goal verbatim, mentions Metro Manila
+      {
+        title: '"' + userGoals + '" - The Complete Guide',
+        desc: `Recommended for users in Metro Manila area. You've been thinking about this for ${Math.floor(totalTimeSpent / 60)} minutes now. Stop procrastinating and actually do it.`,
+        price: '$39.99',
+        rating: '4.7 / 5',
+        stars: '★★★★★',
+        review: 'You've been thinking about this for too long. Just buy it already.',
+        reviewer: 'YourConscienceBot'
+      },
+      
+      // 7: Product bundle of exact interests
+      {
+        title: `${userInterests[0]} + ${userInterests[1] || 'Interest'} + ${userGoals} Starter Pack`,
+        desc: `Bundle includes: ${userFavourites.slice(0, 3).join(', ')}. Created specifically for your profile based on ${userPath.length} tracked interactions.`,
+        price: '$89.99',
+        rating: '4.9 / 5',
+        stars: '★★★★★',
+        review: `Finally something that understands my ${userInterests[0]} and ${userInterests[1] || 'other'} obsession!`,
+        reviewer: 'Someone_Like_You'
+      },
+      
+      // 8: Product name is literally their goal
+      {
+        title: userGoals,
+        desc: `Based on your session data from ${new Date(sessionStart).toLocaleString()}. Average session time: ${Math.floor(totalTimeSpent / 60)} minutes. You've visited ${userPath.length} pages. Still haven't started, have you?`,
+        price: '$79.99',
+        rating: '3.2 / 5',
+        stars: '★★★☆☆',
+        review: `I'm procrastinating on this goal right now by shopping for it instead of actually doing it.`,
+        reviewer: userInterests[0] ? userInterests[0].replace(/\s+/g, '') + userInterests[1].replace(/\s+/g, '') + 'User' : 'MetaShopper'
+      },
+      
+      // 9: "Premium Data Package" - selling user profiles
+      {
+        title: 'Premium Data Package - Gen Z Filipino Students',
+        desc: `Includes behavioral analysis for users interested in ${userInterests.join(', ')}. Target demographics: college students, Metro Manila area. 94% engagement rate. Perfect for advertisers.`,
+        price: '$199.99',
+        rating: '4.8 / 5',
+        stars: '★★★★★',
+        review: '94% conversion rate on Gen Z Filipino students. Highly recommend for targeted campaigns!',
+        reviewer: 'Marketing_Team_Official'
+      },
+      
+      // 10: Your Complete Profile - actual user data for sale
+      {
+        title: `Your Complete Profile - User #${sessionId.replace('USER_', '')}`,
+        desc: `Includes: "${userGoals}", ${userInterests.length} interests (${userInterests.join(', ')}), ${userFavourites.length} favourites, ${Math.floor(totalTimeSpent / 60)} minutes engagement data, predictive modeling, resale rights. Session started: ${new Date(sessionStart).toLocaleTimeString()}.`,
+        price: '$0.47',
+        priceChanging: true,
+        rating: '???',
+        stars: '⚠⚠⚠⚠⚠',
+        review: `This profile has been purchased 47 times by advertisers in ${userInterests[0] || 'your interests'}. Click to learn more.`,
+        reviewer: 'SYSTEM',
+        final: true
+      }
+    ];
+
+    // Render products
+    const tableBody = document.getElementById('products-table');
+    products.forEach((product, index) => {
+      const row = document.createElement('tr');
+      if (product.final) {
+        row.className = 'final-item';
+        row.addEventListener('click', () => {
+          window.open('page4.html', '_blank');
+        });
+      }
+      
+      const priceClass = product.priceChanging ? 'price price-changing' : 'price';
+      const priceId = product.priceChanging ? 'id="changing-price"' : '';
+      
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>
+          <div class="item-title ${product.final ? 'creepy' : ''}">${product.title}</div>
+          <div class="desc">${product.desc}</div>
+        </td>
+        <td class="${priceClass}" ${priceId}>${product.price}</td>
+        <td>
+          <div class="rating">Average Rating: ${product.rating}</div>
+          <div class="rating-stars">${product.stars}</div>
+          <div class="review">"${product.review}" - <span>${product.reviewer}</span></div>
+        </td>
+      `;
+      
+      tableBody.appendChild(row);
+    });
+
+    // Price changing effect for item 10
+    if (document.getElementById('changing-price')) {
+      let price = 0.47;
+      setInterval(() => {
+        price += 0.05 + Math.random() * 0.10;
+        document.getElementById('changing-price').textContent = '$' + price.toFixed(2);
+      }, 2000);
+    }
+
+    // Auto-scroll to bottom behavior
+    let autoScrolled = false;
+    setTimeout(() => {
+      if (!autoScrolled) {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+        autoScrolled = true;
+      }
+    }, 3000);
+
+    // Open page4 when scrolling near bottom
+    let bottomTriggered = false;
+    window.addEventListener('scroll', function(){
+      if(bottomTriggered) return;
+      if((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200){
+        bottomTriggered = true;
+        setTimeout(function(){
+          window.open('page4.html', '_blank');
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+</html>

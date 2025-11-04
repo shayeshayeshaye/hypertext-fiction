@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Database Admin Panel</title>
+  <meta name="viewport" content="width=980">
+  <style>
+    body {background:#000; color:#0f0; font-family: "Courier New", monospace; padding:20px;}
+    .terminal {max-width:980px; margin:0 auto; line-height:1.8;}
+    .section {margin:30px 0; padding:20px; border:1px solid #0f0; background:#001100;}
+    .section h2 {color:#0f0; font-size:18px; margin:0 0 15px 0; border-bottom:1px solid #0f0; padding-bottom:5px;}
+    .data-row {margin:8px 0; padding-left:20px;}
+    .key {color:#0ff;}
+    .value {color:#fff;}
+    .warning {color:#ff0;}
+    .error {color:#f00;}
+    .typewriter {opacity:0;}
+    .cursor {display:inline-block; width:10px; height:18px; background:#0f0; animation:blink 1s infinite;}
+    @keyframes blink {0%, 50% {opacity:1;} 51%, 100% {opacity:0;}}
+    .btn {
+      background:#0f0; 
+      color:#000; 
+      border:2px solid #0f0; 
+      padding:10px 20px; 
+      font-family:"Courier New", monospace; 
+      font-weight:bold; 
+      cursor:pointer;
+      margin:10px 5px;
+      font-size:14px;
+    }
+    .btn:hover {background:#fff; color:#000; border-color:#fff;}
+    .modal {
+      display:none;
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%, -50%);
+      background:#001100;
+      border:2px solid #0f0;
+      padding:30px;
+      max-width:600px;
+      z-index:1000;
+    }
+    .modal-overlay {
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.9);
+      z-index:999;
+    }
+    a {color:#0ff; cursor:pointer;}
+    a:hover {color:#fff;}
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div style="text-align:center; margin-bottom:30px;">
+      <pre style="color:#0f0; font-size:10px;">
+╔═══════════════════════════════════════╗
+║   DATABASE ADMINISTRATION PANEL       ║
+║   user_profiles.db                    ║
+╚═══════════════════════════════════════╝
+      </pre>
+    </div>
+
+    <div id="content"></div>
+    
+    <div id="buttons" style="text-align:center; margin-top:30px; display:none;">
+      <button class="btn" onclick="showModal()">Learn More</button>
+      <button class="btn" onclick="exitToLoop()">Exit</button>
+    </div>
+  </div>
+
+  <!-- Modal for citations -->
+  <div class="modal-overlay" id="modalOverlay" onclick="hideModal()"></div>
+  <div class="modal" id="modal">
+    <h2 style="color:#0f0; border-bottom:1px solid #0f0; padding-bottom:10px;">References</h2>
+    <div style="color:#fff; line-height:1.8; font-size:13px;">
+      <p>• Mandel, E.S.J. (2022). <em>Sea of Tranquility</em>. Knopf.</p>
+      <p>• Crouch, B. (2019). <em>Recursion</em>. Crown.</p>
+      <p>• Zuboff, S. (2019). <em>The Age of Surveillance Capitalism</em>. PublicAffairs.</p>
+      <p>• Bernays, E. (1928). <em>Propaganda</em>. Horace Liveright.</p>
+      <p>• Cheng, L., Varshney, K.R., & Liu, H. (2021). "Socially Responsible AI Algorithms: Issues, Purposes, and Challenges." <em>Journal of Artificial Intelligence Research</em>, 71, 1137-1181.</p>
+      <p>• O'Sullivan, D. (2021). "How algorithms shape our world." <em>CNN Business</em>.</p>
+      <p>• Milmo, D. (2022). "Rohingya sue Meta for £150bn over Myanmar genocide." <em>Time</em>.</p>
+    </div>
+    <div style="text-align:center; margin-top:20px;">
+      <button class="btn" onclick="hideModal()">Close</button>
+    </div>
+  </div>
+
+  <script src="core-system.js"></script>
+  <script>
+    // Track page visit
+    HypertextCore.trackPageVisit('Act4_Data');
+
+    // Get all user data
+    const sessionId = HypertextCore.sessionId;
+    const userGoals = HypertextCore.getUserGoals();
+    const userInterests = HypertextCore.getUserInterests();
+    const userFavourites = HypertextCore.getUserFavourites();
+    const userRole = HypertextCore.getUserRole();
+    const userPath = JSON.parse(localStorage.getItem('userPath') || '[]');
+    const sessionStart = localStorage.getItem('sessionStart');
+    const totalTimeSpent = HypertextCore.getTotalTimeSpent();
+
+    // Build content sections
+    const sections = [
+      {
+        title: 'SECTION 1: "Given Data" (What the system collected)',
+        content: `
+<div class="data-row"><span class="key">USER_ID:</span> <span class="value">${sessionId}</span></div>
+<div class="data-row"><span class="key">SESSION_START:</span> <span class="value">${new Date(sessionStart).toLocaleString()}</span></div>
+<div class="data-row"><span class="key">ROLE:</span> <span class="value">${userRole}</span></div>
+<div class="data-row"><span class="key">GOAL_INPUT:</span> <span class="value">"${userGoals}"</span></div>
+<div class="data-row"><span class="key">INTEREST_CATEGORIES:</span> <span class="value">[${userInterests.join(', ')}]</span></div>
+<div class="data-row"><span class="key">SPECIFIC_INTERESTS:</span> <span class="value">[${userFavourites.join(', ')}]</span></div>
+<div class="data-row"><span class="key">PATH:</span> <span class="value">${userPath.map(p => p.page).join(' → ')}</span></div>
+<div class="data-row"><span class="key">TOTAL_TIME_SPENT:</span> <span class="value">${Math.floor(totalTimeSpent / 60)} minutes ${totalTimeSpent % 60} seconds</span></div>
+        `,
+        delay: 2000
+      },
+      {
+        title: 'SECTION 2: "Inferred Profile"',
+        content: `
+<div class="data-row"><span class="key">DEMOGRAPHIC_CLUSTER:</span> <span class="value">gen_z_college_student_media_consumer</span></div>
+<div class="data-row"><span class="key">PREFERENCE_PATTERN:</span> <span class="value">procrastination_via_${userInterests[0] ? userInterests[0].toLowerCase().replace(/\s+/g, '_') : 'digital_media'}</span></div>
+<div class="data-row"><span class="key">LIKELY_ALSO_ENJOYS:</span> <span class="value">[${generateSuggestions(userInterests).join(', ')}]</span></div>
+<div class="data-row"><span class="key">ENGAGEMENT_PATTERN:</span> <span class="value">distracted_multitasking_avoidant</span></div>
+<div class="data-row"><span class="key">EVIDENCE:</span> <span class="value">${userPath.length} pages in ${Math.floor(totalTimeSpent / 60)} minutes = ${(userPath.length / (totalTimeSpent / 60)).toFixed(2)} pages/min</span></div>
+<div class="data-row"><span class="key">PSYCHOLOGICAL_PROFILE:</span> <span class="value">goal-setting_without_execution</span></div>
+<div class="data-row"><span class="key">BEHAVIORAL_TENDENCY:</span> <span class="value">seeks_productivity_content_as_procrastination</span></div>
+<div class="data-row"><span class="key">COMPLETION_LIKELIHOOD:</span> <span class="error">12%</span></div>
+
+<div class="data-row" style="margin-top:15px; color:#666;">
+<span class="warning">Note:</span> These inferences are probabilistic stereotypes.<br>
+<span class="key">Accuracy:</span> Unknown<br>
+<span class="key">Prophecy-type:</span> Self-Fulfilling
+</div>
+        `,
+        delay: 5000
+      },
+      {
+        title: 'SECTION 3: "How This Profile Was Built"',
+        content: `
+<div class="data-row">• You provided <span class="value">5</span> explicit data points</div>
+<div class="data-row">• System matched against cultural clustering patterns</div>
+<div class="data-row">• Generated <span class="value">15+</span> probabilistic inferences</div>
+<div class="data-row">• Served you content based on inferences</div>
+<div class="data-row">• Your engagement (reading article, clicking links) confirmed some guesses</div>
+<div class="data-row">• Non-engagement was ignored</div>
+<div class="data-row">• Confirmed guesses strengthened profile</div>
+<div class="data-row">• Profile influences what you see next</div>
+
+<div class="data-row" style="margin-top:20px; color:#fff;">
+Every single thing you do is a data point somewhere that can be fed into a machine that summarizes our likes, dislikes, opinions, personalities, into algorithms. Our entire being, reduced to numbers in a cloud somewhere.
+</div>
+
+<div class="data-row" style="margin-top:15px; color:#666;">
+But even saying this wasn't possible without using the same algorithms. Isn't that kind of funny? I'm making a project about the unfeelingness of an algorithm using… an algorithm.
+</div>
+        `,
+        delay: 5000
+      },
+      {
+        title: 'SECTION 4: "The Feedback Loop"',
+        content: `
+<pre style="color:#0ff;">
+You engage → System learns → System predicts
+     ↑                                 ↓
+     ←←←←← Serves content ←←←←←←←←←←←←←
+</pre>
+
+<div class="data-row" style="margin-top:15px;">Each iteration of the cycle:</div>
+<div class="data-row">• Narrows what you see</div>
+<div class="data-row">• Reinforces existing patterns</div>
+<div class="data-row">• Makes predictions more accurate</div>
+<div class="data-row">• Reduces exploratory behavior</div>
+<div class="data-row">• Locks you into profile</div>
+
+<div class="data-row" style="margin-top:20px; color:#fff;">
+Algorithms get smarter because you engage with them. But it's impossible to not engage with them in our current time. In 2005, in the absence of social media as we knew it then, maybe this is what it would have looked like.
+</div>
+
+<div class="data-row" style="margin-top:15px; color:#666;">
+Do you want to know what Claude told me? "Your project can't escape this irony. It shouldn't try to. Maybe that's the actual ending."
+</div>
+        `,
+        delay: 5000
+      },
+      {
+        title: 'SECTION 5: "The Scale"',
+        content: `
+<div class="data-row">This project collected <span class="value">5</span> data points from you.</div>
+
+<div class="data-row" style="margin-top:15px;">Real platforms collect <span class="error">5,000+</span> data points per session:</div>
+<div class="data-row" style="color:#888; font-size:11px;">
+• Click coordinates • Scroll velocity • Time between keystrokes • Which tab you're viewing • Whether you're looking at the screen (camera access) • Your location (always) • Every other site you visited today • Everyone you've ever contacted • Everything you've ever purchased • Every video you didn't finish watching • Every post you wrote then deleted • How long you hover over a post before scrolling past • Whether you typed a comment then deleted it before posting • Which Canvas assignments you opened but didn't submit • Your Spotify listening patterns during study hours vs. leisure • How many times you rewatched the same TikTok/Reel • Which Discord servers you lurk in without posting • Your Canva search history and unused design templates • Gmail drafts you never sent • How fast you swipe through stories vs. stopping to watch • Which Messenger conversations you leave on "read" • Your phone's accelerometer data (are you lying down, walking, sitting?) • Whether you screenshot posts (and which ones) • How many times you checked someone's profile without following • Which playlists you skip through vs. listen completely • Your Canvas login times (studying at 2am vs. 2pm) • Which Instagram posts you saved but never looked at again • How long you spend reading vs. skimming articles • Which YouTube videos you put on in the background vs. actively watch • Your Discord voice chat duration and frequency • Which Canva templates you browsed but didn't use • Whether you turn on "Do Not Disturb" mode (and when) • How quickly you dismiss notifications • Which GIFs/emojis you search for but don't send • Your pattern of opening multiple tabs then closing them without reading • Whether you listen to the same Spotify song on repeat (and how many times) • How long you spent reading the syllabus for this class
+</div>
+
+<div class="data-row" style="margin-top:20px; color:#f00; font-weight:bold;">
+You cannot opt out.
+</div>
+
+<div class="data-row" style="margin-top:10px;">
+Not using social media? Your friends' data includes you.<br>
+Using privacy tools? Your absence is data.<br>
+Trying to be unpredictable? That's a pattern too.<br>
+The only way to not feed the algorithm is to not exist online.
+</div>
+
+<div class="data-row" style="margin-top:15px; color:#fff;">
+But you're reading this on a digital device. This class requires a digital device.
+</div>
+
+<div class="data-row" style="margin-top:10px; color:#ff0;">
+To exist today requires payment, in the form of data.
+</div>
+        `,
+        delay: 5000
+      },
+      {
+        title: 'SECTION 6: "Current Status"',
+        content: `
+<div class="data-row"><span class="key">TIME_ON_THIS_PAGE:</span> <span class="value" id="time-counter">0</span> seconds</div>
+<div class="data-row"><span class="key">PREDICTED_NEXT_ACTION:</span> <span class="value">nothing (23% confidence)</span></div>
+<div class="data-row"><span class="key">PREDICTED_EMOTIONAL_STATE:</span> <span class="value">unknown</span></div>
+<div class="data-row"><span class="key">PREDICTED_BEHAVIOR_CHANGE:</span> <span class="error">minimal (4% probability)</span></div>
+
+<div class="data-row" style="margin-top:20px; color:#fff;">
+Here's what you're probably going to do:<br>
+• Nothing, because what's the point?
+</div>
+
+<div class="data-row" style="margin-top:15px; color:#666;">
+What's wrong with seeing only what you like? With wanting only what you're shown? With every choice feeling natural when the algorithm already knows what you'll choose? With liking things because they're yours, or because they were made to feel like yours? Maybe this is more efficient. A world that reflects you back to yourself endlessly.
+</div>
+
+<div class="data-row" style="margin-top:20px; color:#888;">
+This prediction is based on <span class="value">847,293</span> previous users who saw similar content.
+</div>
+
+<div class="data-row" style="margin-top:10px; color:#f00;">
+You are user #<span class="value">847,294</span>.
+</div>
+
+<div id="wait-message" style="margin-top:30px; display:none;">
+<div class="data-row"><span class="key">PREDICTION_ACCURACY:</span> <span class="value">Recalculating...</span></div>
+<div class="data-row" style="color:#ff0;">You're still here. Interesting.</div>
+
+<div class="data-row" style="margin-top:15px;">
+Updated profile:<br>
+• Possibly close to achieving recursion<br>
+• OR: Waiting to see what happens next
+</div>
+
+<div class="data-row" style="margin-top:10px; color:#666;">
+Both patterns are in the database.<br>
+This adjustment has been logged.
+</div>
+</div>
+        `,
+        delay: 5000
+      }
+    ];
+
+    function generateSuggestions(interests) {
+      const suggestions = {
+        'Gaming': ['Streaming', 'Esports', 'Game Design'],
+        'Art & Design': ['Photography', 'Digital Art', 'Graphic Design'],
+        'Music': ['Concert Videos', 'Music Production', 'Vinyl Collecting'],
+        'Sports': ['Sports Analysis', 'Fitness', 'Athlete Documentaries'],
+        'Film & TV': ['Film Analysis', 'Cinematography', 'Screenwriting']
+      };
+      
+      let result = [];
+      interests.forEach(interest => {
+        if (suggestions[interest]) {
+          result = result.concat(suggestions[interest]);
+        }
+      });
+      
+      return result.length > 0 ? result.slice(0, 3) : ['Social Media', 'YouTube', 'Podcasts'];
+    }
+
+    // Typewriter effect
+    let sectionIndex = 0;
+    let timeOnPage = 0;
+    let waitMessageShown = false;
+
+    function typewriterEffect(element, text, callback) {
+      element.style.opacity = '1';
+      element.innerHTML = text;
+      if (callback) setTimeout(callback, 500);
+    }
+
+    function showNextSection() {
+      if (sectionIndex >= sections.length) {
+        document.getElementById('buttons').style.display = 'block';
+        return;
+      }
+
+      const section = sections[sectionIndex];
+      const sectionDiv = document.createElement('div');
+      sectionDiv.className = 'section typewriter';
+      
+      const titleDiv = document.createElement('h2');
+      titleDiv.textContent = section.title;
+      sectionDiv.appendChild(titleDiv);
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.innerHTML = section.content;
+      sectionDiv.appendChild(contentDiv);
+      
+      document.getElementById('content').appendChild(sectionDiv);
+      
+      typewriterEffect(sectionDiv, sectionDiv.innerHTML, () => {
+        sectionIndex++;
+        setTimeout(showNextSection, section.delay);
+      });
+    }
+
+    // Time counter
+    setInterval(() => {
+      timeOnPage++;
+      const counter = document.getElementById('time-counter');
+      if (counter) {
+        counter.textContent = timeOnPage;
+      }
+      
+      // Show wait message after 8 seconds
+      if (timeOnPage === 8 && !waitMessageShown && sectionIndex >= sections.length) {
+        waitMessageShown = true;
+        document.getElementById('wait-message').style.display = 'block';
+      }
+    }, 1000);
+
+    // Modal functions
+    function showModal() {
+      document.getElementById('modal').style.display = 'block';
+      document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function hideModal() {
+      document.getElementById('modal').style.display = 'none';
+      document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    function exitToLoop() {
+      // Clear all data except API key
+      const keysToKeep = ['claudeApiKey'];
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (!keysToKeep.includes(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Redirect to beginning
+      window.location.href = 'index.html';
+    }
+
+    // Start the typewriter sequence
+    setTimeout(showNextSection, 1000);
+  </script>
+</body>
+</html>

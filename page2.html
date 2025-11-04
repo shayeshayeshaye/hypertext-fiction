@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Loading Article...</title>
+  <meta name="viewport" content="width=800">
+  <style>
+    body{background:#f2f2f2 url('background_tile.jpg') repeat; font-family: Arial, Helvetica, sans-serif;}
+    .container{width:800px; margin:20px auto; background:#fff; border:4px solid #c0c0c0}
+    .header{background:linear-gradient(to bottom, #003366, #0055aa); padding:12px;}
+    .logo{float:left; color:#fff; font-size:24px; font-weight:bold;}
+    .nav{float:right; text-align:right; font-size:12px}
+    .clear{clear:both}
+    .content{padding:14px}
+    .intro{font-size:14px; color:#333; margin-bottom:20px;}
+    .list-item{border-top:1px dashed #999; padding:12px 0;}
+    .item-number{font-size:48px; font-weight:bold; float:left; width:70px; color:#b21}
+    .item-body{margin-left:90px}
+    .item-title{font-size:18px; font-weight:bold; margin-bottom:8px;}
+    .item-text{font-size:14px; line-height:1.6; color:#333;}
+    .sidebar{background:#fafafa; border-left:3px solid #ddd; padding:10px; font-size:12px}
+    .sidebar h3{color:#b21; font-size:14px; margin-top:0;}
+    .sidebar-ad{border:2px solid #b21; padding:8px; margin:10px 0; background:#fff8f0; cursor:pointer;}
+    .sidebar-ad:hover{background:#ffe0e0;}
+    .sidebar-ad strong{color:#b21; display:block; margin-bottom:4px;}
+    .footer{background:#f6f6f6; text-align:center; padding:8px; font-size:12px; border-top:1px solid #ddd}
+    .comments-section{padding:14px; border-top:2px solid #ccc; background:#fafafa}
+    .comment{border-bottom:1px dashed #aaa; padding:8px 0; font-size:13px}
+    .comment strong{color:#b21}
+    .comment a{color:#0066cc; cursor:pointer;}
+    a {color:#0066cc; text-decoration:none}
+    a:hover {text-decoration:underline}
+    .btn {display:inline-block; padding:4px 8px; border:2px outset #ddd; background:#e9e9e9; font-size:12px; cursor:pointer;}
+    
+    /* Glitch effects */
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); color: #f00; }
+      40% { transform: translate(2px, -2px); color: #0f0; }
+      60% { transform: translate(-1px, -1px); color: #00f; }
+      80% { transform: translate(1px, 1px); color: #f0f; }
+      100% { transform: translate(0); }
+    }
+    
+    .glitch {
+      animation: glitch 0.3s infinite;
+    }
+    
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    .flicker {
+      animation: flicker 0.1s infinite;
+    }
+    
+    .text-glitch {
+      position: relative;
+    }
+    
+    .grow {
+      font-size: 150%;
+      font-weight: bold;
+      color: #b21;
+    }
+    
+    .no-vowels {
+      color: #999;
+    }
+    
+    @media (max-width:820px){.container{width:98%}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">📰 RETROLIST.NET</div>
+      <div class="nav">
+        <div style="margin-bottom:6px;"><span class="btn">Home</span> <span class="btn">Lists</span> <span class="btn">Contact</span></div>
+        <div style="font-size:11px; color:#fff">By <strong id="article-author">Author</strong> &nbsp;|&nbsp; <span id="article-date">Loading...</span></div>
+      </div>
+      <div class="clear"></div>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="12">
+      <tr>
+        <td width="65%" valign="top">
+          <div class="content">
+            <h1 style="margin:6px 0; font-size:28px; color:#b21" id="article-title">Loading...</h1>
+            <div class="intro" id="article-intro">Just a moment...</div>
+
+            <!-- Items will be generated here -->
+            <div id="items-container"></div>
+
+            <!-- COMMENTS SECTION -->
+            <div class="comments-section" id="comments">
+              <h2 style="color:#b21; font-size:20px;">Comments (<span id="comment-count">10</span>)</h2>
+              <div id="comments-container"></div>
+            </div>
+          </div>
+        </td>
+        <td width="35%" valign="top">
+          <div class="sidebar">
+            <h3>Related Articles</h3>
+            <div id="sidebar-ads"></div>
+            <hr>
+            <h3>Subscribe</h3>
+            <form action="#" method="post">
+              <input type="text" name="email" size="20" value="you@example.com"><br><br>
+              <input type="submit" value="Subscribe" class="btn">
+            </form>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <marquee behavior="scroll" direction="left" scrollamount="3">Thanks for reading! Check out our archives for more throwback lists.</marquee>
+      <div style="margin-top:6px">&copy; <span id="footer-year">2025</span> RetroList.NET &nbsp;|&nbsp; <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Terms</a></div>
+    </div>
+  </div>
+
+  <script src="core-system.js"></script>
+  <script>
+    // Track page visit
+    HypertextCore.trackPageVisit('Act2_Article');
+
+    // Get article data and user data from localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleNum = urlParams.get('article') || '1';
+    const articleData = HypertextCore.getUserData(`article${articleNum}`);
+    const userGoals = HypertextCore.getUserGoals();
+    const userInterests = HypertextCore.getUserInterests();
+    const userFavourites = HypertextCore.getUserFavourites();
+    const userPath = JSON.parse(localStorage.getItem('userPath') || '[]');
+
+    // Set article metadata
+    if (articleData) {
+      document.title = articleData.title;
+      document.getElementById('article-title').textContent = articleData.title;
+      document.getElementById('article-author').textContent = articleData.author;
+    }
+    
+    const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    document.getElementById('article-date').textContent = currentDate;
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+    
+    // Intro text
+    document.getElementById('article-intro').textContent = `We all struggle with procrastination, but for fans of ${userInterests[0] || 'certain interests'}, the challenge seems particularly acute. Here are 10 signs that might hit close to home.`;
+
+    // Generate 10 listicle items
+    const items = [
+      // Items 1-3: Normal, relatable
+      {
+        title: "You Tell Yourself 'Just Five More Minutes'",
+        body: `It starts innocently enough. You're scrolling, you're browsing, you're 'just taking a quick break.' But five minutes becomes thirty, and suddenly an hour has passed. Sound familiar?`
+      },
+      {
+        title: "Your Browser Has 47 Open Tabs",
+        body: `Research is important, right? That's what you tell yourself. But let's be honest—half those tabs have been open for three days, and you haven't looked at them once. You're not researching. You're avoiding.`
+      },
+      {
+        title: "You've Reorganized Your Workspace Three Times Today",
+        body: `Productivity requires the perfect environment. Or at least that's the excuse. You've adjusted your chair, aligned your pens, and maybe even cleaned your desk. Everything is perfect now—except you still haven't started.`
+      },
+      
+      // Item 4: Getting specific to user
+      {
+        title: `${userInterests[0] || 'Your Interest'} Seems More Important Right Now`,
+        body: `You know you should be working on ${userGoals}, but there's always something more urgent. A new post to check, a video to watch, another article about ${userFavourites[0] || 'your favorite thing'}. It'll only take a minute, you tell yourself. It never does.`
+      },
+      
+      // Item 5: Meta moment
+      {
+        title: "You've Read This Before",
+        body: ``
+      },
+      
+      // Item 6: Uncomfortably specific
+      {
+        title: "You Opened This Article Instead of Starting",
+        body: `Let's not dance around it. You're reading this listicle right now because you're avoiding ${userGoals}. You're a Filipino college student in Metro Manila, probably sitting in front of a screen, telling yourself you'll start 'after this.' How many times have you said that today?`
+      },
+      
+      // Item 7: Blank with meta text
+      {
+        title: "You Know What Comes Next",
+        body: ``
+      },
+      
+      // Items 8-9: Back to normal
+      {
+        title: "You've Mastered the Art of 'Productive Procrastination'",
+        body: `Why do the thing you're supposed to do when you can do three other semi-important things instead? Answering emails, organizing files, updating your to-do list—anything but the actual work. It feels productive, but deep down, you know better.`
+      },
+      {
+        title: "Deadlines Are Your Only Real Motivation",
+        body: `Without the pressure of a looming deadline, nothing gets done. You've convinced yourself you 'work better under pressure,' but really, it's just the only way you'll actually start. And even then, you're cutting it close.`
+      },
+      
+      // Item 10: Extremely specific
+      {
+        title: "You're Sitting in Arete Right Now, Aren't You?",
+        body: `The fine arts building at Ateneo de Manila University. You're supposed to be working on your creative project for class. The one that's due soon. But instead, you're here, reading this, probably wondering how this article knows exactly where you are and what you're avoiding. Funny how algorithms work, isn't it?`
+      }
+    ];
+
+    // Render items with progressive glitch effects
+    const itemsContainer = document.getElementById('items-container');
+    items.forEach((item, index) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'list-item';
+      itemDiv.id = `item-${index + 1}`;
+      
+      const itemNumber = document.createElement('div');
+      itemNumber.className = 'item-number';
+      itemNumber.textContent = index + 1;
+      
+      const itemBody = document.createElement('div');
+      itemBody.className = 'item-body';
+      
+      const itemTitle = document.createElement('div');
+      itemTitle.className = 'item-title';
+      itemTitle.textContent = item.title;
+      
+      const itemText = document.createElement('div');
+      itemText.className = 'item-text';
+      itemText.textContent = item.body;
+      
+      itemBody.appendChild(itemTitle);
+      itemBody.appendChild(itemText);
+      itemDiv.appendChild(itemNumber);
+      itemDiv.appendChild(itemBody);
+      
+      const clear = document.createElement('div');
+      clear.className = 'clear';
+      itemDiv.appendChild(clear);
+      
+      itemsContainer.appendChild(itemDiv);
+    });
+
+    // Apply glitch effects after page loads
+    setTimeout(() => {
+      applyGlitchEffects();
+      startRandomGlitches();
+    }, 2000);
+
+    function applyGlitchEffects() {
+      // Item 5: Replace text
+      const item5 = document.querySelector('#item-5 .item-text');
+      if (item5) {
+        item5.textContent = "You've read this before.";
+        item5.style.fontStyle = 'italic';
+        item5.style.color = '#666';
+      }
+      
+      // Item 7: Replace text
+      const item7 = document.querySelector('#item-7 .item-text');
+      if (item7) {
+        item7.textContent = "You know what comes next.";
+        item7.style.fontStyle = 'italic';
+        item7.style.color = '#666';
+      }
+    }
+
+    function startRandomGlitches() {
+      setInterval(() => {
+        const items = document.querySelectorAll('.item-text');
+        const randomItem = items[Math.floor(Math.random() * items.length)];
+        
+        const glitchType = Math.floor(Math.random() * 5);
+        
+        switch(glitchType) {
+          case 0: // Flicker
+            randomItem.classList.add('flicker');
+            setTimeout(() => randomItem.classList.remove('flicker'), 500);
+            break;
+            
+          case 1: // Color change
+            const originalColor = randomItem.style.color;
+            randomItem.style.color = '#f00';
+            setTimeout(() => randomItem.style.color = originalColor, 300);
+            break;
+            
+          case 2: // Word repetition
+            const text = randomItem.textContent;
+            const words = text.split(' ');
+            if (words.length > 3) {
+              const randomWord = words[Math.floor(Math.random() * words.length)];
+              randomItem.textContent = text.replace(randomWord, randomWord + ' ' + randomWord + ' ' + randomWord);
+              setTimeout(() => randomItem.textContent = text, 1000);
+            }
+            break;
+            
+          case 3: // Remove vowels briefly
+            const originalText = randomItem.textContent;
+            randomItem.textContent = originalText.replace(/[aeiou]/gi, '');
+            setTimeout(() => randomItem.textContent = originalText, 500);
+            break;
+            
+          case 4: // Size change
+            randomItem.classList.add('grow');
+            setTimeout(() => randomItem.classList.remove('grow'), 400);
+            break;
+        }
+      }, 3000);
+    }
+
+    // Generate unsettling comments
+    const comments = [
+      { author: "ProcrastinationKing", text: "This is so relatable! I should probably get back to work now..." },
+      { author: `${userFavourites[0] || 'Interest'}Fan2005`, text: `Same here! Especially the part about ${userGoals}` },
+      { author: "UserSession" + HypertextCore.sessionId.replace('USER_', ''), text: `"${userGoals}"` },
+      { author: "FutureYou", text: "I'm about to close this tab too", timestamp: new Date(Date.now() + 60000).toISOString() },
+      { author: "WatchingYou", text: "I'm about to close this tab too" },
+      { author: "Anonymous", text: "Wait, how did this article know I was interested in " + (userInterests.join(', ')) + "?" },
+      { author: "MetaReader", text: "I don't know, do you think this is a good idea or is too on the nose?" },
+      { author: "StressedStudent", text: "I have to present today after this session :(" },
+      { author: "DataCollector", text: userInterests.join(', ') + " - " + userFavourites.join(', ') },
+      { author: "SystemAdmin", text: "This is a new tab. How did it get the preferences you listed from the previous tab?" },
+      { author: "ERROR_404", text: "Something is wrong. Something is very wrong.", link: true }
+    ];
+
+    const commentsContainer = document.getElementById('comments-container');
+    comments.forEach((comment, index) => {
+      const commentDiv = document.createElement('div');
+      commentDiv.className = 'comment';
+      
+      if (comment.link && index === comments.length - 1) {
+        commentDiv.innerHTML = `<strong>${comment.author}</strong> says:<br><a id="final-comment-link">${comment.text}</a>`;
+        setTimeout(() => {
+          document.getElementById('final-comment-link').addEventListener('click', () => {
+            window.open('page3.html', '_blank');
+          });
+        }, 100);
+      } else {
+        commentDiv.innerHTML = `<strong>${comment.author}</strong> says:<br>${comment.text}`;
+      }
+      
+      commentsContainer.appendChild(commentDiv);
+    });
+
+    // Generate sidebar ads
+    const sidebarAds = [
+      `Finally ${userGoals}! Click here →`,
+      `${userInterests[0]} fans: You need to see this`,
+      `"${userGoals}" - We can help`,
+      `${userFavourites[0]} + ${userFavourites[1]} Bundle - Limited Time!`
+    ];
+
+    const sidebarContainer = document.getElementById('sidebar-ads');
+    sidebarAds.forEach(ad => {
+      const adDiv = document.createElement('div');
+      adDiv.className = 'sidebar-ad';
+      adDiv.innerHTML = `<strong>SPONSORED</strong>${ad}`;
+      adDiv.addEventListener('click', () => {
+        window.open('page3.html', '_blank');
+      });
+      sidebarContainer.appendChild(adDiv);
+    });
+
+    // Scroll behavior: open page3 after reaching bottom
+    let bottomTriggered = false;
+    window.addEventListener('scroll', function(){
+      if(bottomTriggered) return;
+      if((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100){
+        bottomTriggered = true;
+        setTimeout(function(){
+          window.open('page3.html', '_blank');
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+</html>
