@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ChatBOT (2005 Beta)</title>
+  <style>
+    body {
+      background-color: #99ccff;
+      font-family: Tahoma, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #000;
+    }
+    #wrapper {
+      width: 960px;
+      margin: 0 auto;
+      background-color: #fff;
+      border: 2px solid #000080;
+    }
+    #header {
+      background: linear-gradient(#3366cc, #003366);
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 36px;
+      text-shadow: 2px 2px #000;
+    }
+    #nav {
+      background-color: #cce0ff;
+      border-bottom: 1px solid #000080;
+      text-align: center;
+      padding: 8px 0;
+    }
+    #nav a {
+      color: #000080;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 0 10px;
+    }
+    #nav a:hover {
+      text-decoration: underline;
+    }
+    #content {
+      display: flex;
+      padding: 10px;
+    }
+    #sidebar {
+      width: 200px;
+      background-color: #e6f0ff;
+      border-right: 1px solid #99b3e6;
+      padding: 10px;
+      font-size: 12px;
+    }
+    #main {
+      flex: 1;
+      padding: 10px;
+    }
+    .box {
+      border: 1px solid #99b3e6;
+      background-color: #f2f7ff;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    #chatBox {
+      border: 1px solid #99b3e6;
+      background-color: #fff;
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 3px;
+    }
+    .bot-message {
+      background-color: #e6f0ff;
+      border-left: 3px solid #3366cc;
+    }
+    .user-message {
+      background-color: #f0f0f0;
+      border-left: 3px solid #666;
+      margin-left: 20px;
+    }
+    #footer {
+      background-color: #cce0ff;
+      border-top: 1px solid #000080;
+      text-align: center;
+      padding: 5px;
+      font-size: 11px;
+    }
+    marquee {
+      background-color: #003366;
+      color: #fff;
+      padding: 5px;
+      font-weight: bold;
+    }
+    input[type=text] {
+      width: calc(100% - 70px);
+      padding: 5px;
+      border: 1px solid #99b3e6;
+    }
+    input[type=submit] {
+      background-color: #003366;
+      color: #fff;
+      border: 1px solid #000080;
+      padding: 5px 10px;
+      cursor: pointer;
+      width: 60px;
+    }
+    input[type=submit]:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 51, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #fff;
+      border: 3px solid #000080;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 5px 5px 10px rgba(0,0,0,0.5);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h2 {
+      color: #003366;
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 2px solid #3366cc;
+      padding-bottom: 5px;
+    }
+    .modal p {
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    .modal-button {
+      background-color: #003366;
+      color: #fff;
+      border: 1px solid #000080;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .modal-button:hover {
+      background-color: #3366cc;
+    }
+    .hidden {
+      display: none;
+    }
+
+    /* Checkbox grid styles */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 15px 0;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #f5f5f5;
+      border: 1px solid #99b3e6;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+    }
+    .checkbox-item input {
+      margin-right: 6px;
+    }
+    .checkbox-section {
+      margin-bottom: 20px;
+    }
+    .checkbox-section h3 {
+      color: #003366;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    /* Article preview styles */
+    .article-preview {
+      border: 1px solid #99b3e6;
+      background: #f9f9f9;
+      padding: 12px;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .article-preview:hover {
+      background: #e6f0ff;
+    }
+    .article-title {
+      font-weight: bold;
+      color: #000080;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .article-hook {
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
+    .article-meta {
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* Flash effect for unsettling prompt */
+    @keyframes flash {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    .flash-message {
+      animation: flash 0.1s infinite;
+      color: #b21;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div style="width: 100%; height: 110px; background-color: #003366; padding: 20px; display: flex; align-items: center; box-sizing: border-box;">
+    <span style="font-size: 40px; font-weight: bold; color: #fff; margin-right: 20px; white-space: nowrap;">CRWR130</span>
+    <span style="font-size: 20px; color: #fff; line-height: 1.4;">This is a project created under Writing for New and Emergent Media with Professor Carljoe Javier that envisions LLMs in 2005.</span>
+  </div>
+  <div id="wrapper">
+    <div id="header">
+      <h1>ChatBOT</h1>
+      <p><i>Artificial Intelligence Assistant - Beta Version (2005)</i></p>
+    </div>
+
+    <div id="nav">
+      <a href="#">Home</a> |
+      <a href="#">About</a> |
+      <a href="#">Download</a> |
+      <a href="#">Support</a> |
+      <a href="#">Forum</a>
+    </div>
+
+    <marquee behavior="scroll" direction="left">Welcome to ChatBOT Beta 2005 – The AI that talks back!</marquee>
+
+    <div id="content">
+      <div id="sidebar">
+        <h3 id="sidebarTitle">Quick Links</h3>
+        <ul id="sidebarContent">
+          <li><a href="#">FAQs</a></li>
+          <li><a href="#">Screenshots</a></li>
+          <li><a href="#">Updates</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+        <hr>
+        <h3>System Status</h3>
+        <p style="color: green; font-weight: bold;">● Online</p>
+        <p style="font-size: 10px;">Last update: Oct 24, 2005</p>
+      </div>
+
+      <div id="main">
+        <div class="box">
+          <h2>Try it out:</h2>
+          <div id="chatBox"></div>
+          <form id="chatForm" onsubmit="return handleSend()">
+            <input type="text" id="userInput" placeholder="Type your message here..." disabled>
+            <input type="submit" value="Send" id="sendButton" disabled>
+          </form>
+        </div>
+
+        <div class="box">
+          <h2>Features</h2>
+          <ul>
+            <li>Fast, friendly AI chat</li>
+            <li>Personalized content recommendations</li>
+            <li>Natural language processing</li>
+            <li>Free while in beta!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="footer">
+      &copy; 2005 ChatBOT Labs | Best viewed in Internet Explorer 6 or Netscape 7 | <a href="#">Privacy Policy</a>
+    </div>
+  </div>
+
+  <!-- Modal 1: Welcome -->
+  <div id="modal1" class="modal-overlay">
+    <div class="modal">
+      <h2>Welcome to ChatBOT</h2>
+      <p>Hi there! I'm here to help you make the most out of ChatBOT, an LLM that generates responses by analyzing patterns. Every word you type helps it predict what you're most likely to want, need, or do next.</p>
+      <button class="modal-button" id="modal1Button">Next →</button>
+    </div>
+  </div>
+
+  <!-- Modal 2: Initial instructions -->
+  <div id="modal2" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Getting Started</h2>
+      <p>ChatBOT can do almost anything. It can tell you a joke, search for information, or perform autonomous tasks as directed. To get started, try asking for the current date and news.</p>
+      <button class="modal-button" id="modal2Button">Next →</button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Role selection -->
+  <div id="modal3" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>About You</h2>
+      <p>ChatBOT has been trained to assist users from educational settings to the workplace. Tell us a bit about yourself—are you a student, professional, or something else?</p>
+      <button class="modal-button" id="modal3Button">Next →</button>
+    </div>
+  </div>
+
+  <!-- Modal 4: Personalization intro -->
+  <div id="modal4" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Personalization</h2>
+      <p>The real power of ChatBOT is its ability to personalize everything you see based on predicting what you'll want next. To help you make the most out of ChatBOT, help us learn what matters to you!</p>
+      <button class="modal-button" id="modal4Button">Next →</button>
+    </div>
+  </div>
+
+  <!-- Modal 5: Interests selection -->
+  <div id="modal5" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Tell us what you're into</h2>
+      <p>Select all that apply:</p>
+      
+      <div class="checkbox-section">
+        <h3>Interests</h3>
+        <div class="checkbox-grid" id="interestsGrid"></div>
+      </div>
+
+      <div class="checkbox-section">
+        <h3>Favourites</h3>
+        <div class="checkbox-grid" id="favouritesGrid"></div>
+      </div>
+
+      <button class="modal-button" id="modal5Button">I'm done selecting</button>
+    </div>
+  </div>
+
+  <!-- Modal 6: Deeper personalization -->
+  <div id="modal6" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Unlock Deeper Personalization</h2>
+      <p>ChatBOT can unlock even deeper personalization through rich text analysis. The more you share, the more accurately we can predict what content you'll find valuable.</p>
+      <p>Every word you type teaches the algorithm to serve you better. Try it out for yourself right now!</p>
+      <button class="modal-button" id="modal6Button">Continue →</button>
+    </div>
+  </div>
+
+  <!-- Modal 7: Final onboarding -->
+  <div id="modal7" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Thank you for completing onboarding!</h2>
+      <p>Don't worry—your answers are completely encrypted and only help ChatBOT find content you'll actually care about.</p>
+      <p>You can always update your preferences later in Settings.</p>
+      <button class="modal-button" id="modal7Button">Get Started →</button>
+    </div>
+  </div>
+
+  <script>
+    // AWS API Endpoint
+    const AWS_API_ENDPOINT = 'https://jd6xzj4apg.execute-api.ap-southeast-2.amazonaws.com/api/generate';
+
+    // HypertextCore object - simplified version with AWS API integration
+    const HypertextCore = {
+      // Call AWS Claude API with comprehensive error handling
+      async callClaudeAPI(prompt) {
+        try {
+          console.log('Calling AWS API with prompt:', prompt.substring(0, 100) + '...');
+          
+          const requestBody = {
+            prompt: prompt,
+            max_tokens: 150
+          };
+          
+          console.log('Request body:', JSON.stringify(requestBody));
+          
+          const response = await fetch(AWS_API_ENDPOINT, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+          });
+
+          console.log('Response status:', response.status);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API request failed:', response.status, errorText);
+            
+            // Show user-friendly error in console
+            if (response.status === 403) {
+              console.warn('CORS or authentication issue detected. Check AWS API Gateway CORS settings.');
+            } else if (response.status === 404) {
+              console.warn('API endpoint not found. Verify the URL is correct.');
+            } else if (response.status >= 500) {
+              console.warn('Server error. The AWS Lambda function may have an issue.');
+            }
+            
+            return null;
+          }
+
+          const contentType = response.headers.get('content-type');
+          let data;
+          
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            console.log('Non-JSON response:', text);
+            // Try to parse it anyway
+            try {
+              data = JSON.parse(text);
+            } catch {
+              console.warn('Response is not valid JSON:', text);
+              return null;
+            }
+          }
+          
+          console.log('API response data:', data);
+          
+          // Try different possible response field names
+          const result = data.completion || 
+                        data.response || 
+                        data.text || 
+                        data.content || 
+                        data.message || 
+                        data.output ||
+                        data.generated_text ||
+                        null;
+          
+          if (result) {
+            console.log('Successfully extracted result:', result.substring(0, 100) + '...');
+          } else {
+            console.warn('Could not find result in response. Full response:', data);
+          }
+          
+          return result;
+        } catch (error) {
+          console.error('Error calling Claude API:', error);
+          console.error('Error name:', error.name);
+          console.error('Error message:', error.message);
+          
+          // Provide specific guidance based on error type
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.error('FETCH ERROR: This is likely a CORS issue. Your AWS API Gateway needs to:');
+            console.error('1. Enable CORS on the OPTIONS method');
+            console.error('2. Return these headers: Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers');
+            console.error('3. The Lambda function should also return proper CORS headers in the response');
+          }
+          
+          return null;
+        }
+      },
+
+      // Page tracking
+      trackPageVisit(pageName) {
+        const visits = JSON.parse(localStorage.getItem('pageVisits') || '{}');
+        visits[pageName] = (visits[pageName] || 0) + 1;
+        localStorage.setItem('pageVisits', JSON.stringify(visits));
+      },
+
+      // User data management
+      setUserRole(role) {
+        localStorage.setItem('userRole', role);
+      },
+
+      getUserRole() {
+        return localStorage.getItem('userRole') || '';
+      },
+
+      setUserInterests(interests) {
+        localStorage.setItem('userInterests', JSON.stringify(interests));
+      },
+
+      getUserInterests() {
+        return JSON.parse(localStorage.getItem('userInterests') || '[]');
+      },
+
+      setUserFavourites(favourites) {
+        localStorage.setItem('userFavourites', JSON.stringify(favourites));
+      },
+
+      getUserFavourites() {
+        return JSON.parse(localStorage.getItem('userFavourites') || '[]');
+      },
+
+      setUserGoals(goals) {
+        localStorage.setItem('userGoals', goals);
+      },
+
+      getUserGoals() {
+        return localStorage.getItem('userGoals') || '';
+      },
+
+      saveUserData(key, data) {
+        localStorage.setItem(key, JSON.stringify(data));
+      },
+
+      getUserData(key) {
+        return JSON.parse(localStorage.getItem(key) || 'null');
+      },
+
+      // Generate author name based on interests
+      generateAuthorName(interests) {
+        const firstNames = ['Alex', 'Jordan', 'Morgan', 'Casey', 'Riley', 'Taylor', 'Sam', 'Jamie'];
+        const lastNames = ['Chen', 'Smith', 'Rodriguez', 'Johnson', 'Kim', 'Patel', 'Williams', 'Davis'];
+        
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        
+        return `${firstName} ${lastName}`;
+      }
+    };
+
+    // Initialize page tracking
+    HypertextCore.trackPageVisit('Act1_Chat');
+
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    
+    let currentStage = 'welcome';
+    let conversationCount = 0;
+    let waitingForArticleClick = false;
+
+    // Interest categories
+    const interests = [
+      'Sports', 'Gaming', 'Fashion & Beauty', 'K-pop', 'Anime', 'Cooking',
+      'Self-Improvement', 'History', 'Technology', 'Music', 'Film & TV',
+      'Books & Reading', 'Travel', 'Fitness & Health', 'Art & Design'
+    ];
+
+    const favourites = [
+      'FC Barcelona', 'NBA', 'Seventeen', 'BTS', 'One Piece', 'Attack on Titan',
+      'League of Legends', 'Minecraft', 'Vogue', 'Sephora', 'Italian Cuisine',
+      'Baking', 'Meditation', 'Productivity Hacks', 'World War II', 'Ancient Rome',
+      'iPhone', 'Photography', 'Indie Music', 'The Office', 'Harry Potter',
+      'Backpacking', 'Yoga', 'Graphic Design', 'Streetwear', 'Real Madrid',
+      'Formula 1', 'BLACKPINK', 'Taylor Swift', 'Naruto', 'Studio Ghibli',
+      'Fortnite', 'The Sims', 'Skincare Routines', 'Sneaker Culture',
+      'French Cooking', 'Coffee', 'Journaling', 'Financial Independence',
+      'Cold War', 'Greek Mythology', 'Reddit', 'Podcasts', 'Hip-Hop',
+      'Marvel Movies', 'Lord of the Rings', 'True Crime', 'Running',
+      'Mental Health', 'Typography'
+    ];
+
+    // Unsettling follow-up prompts
+    const unsettlingPrompts = [
+      "How long have you been putting this off?",
+      "Do you think you'll actually do it this time?",
+      "What makes you think this time will be different?",
+      "Have you told anyone else about this?",
+      "Is this the first time you've admitted this out loud?",
+      "Do you want us to remind you about this later?",
+      "Should we assume you'll keep avoiding this?",
+      "How predictable are you about things like this?"
+    ];
+
+    // Modal flow
+    document.getElementById('modal1Button').addEventListener('click', () => {
+      document.getElementById('modal1').classList.add('hidden');
+      document.getElementById('modal2').classList.remove('hidden');
+    });
+
+    document.getElementById('modal2Button').addEventListener('click', () => {
+      document.getElementById('modal2').classList.add('hidden');
+      userInput.disabled = false;
+      sendButton.disabled = false;
+      currentStage = 'firstQuery';
+      addMessage("Hello! Feel free to ask me anything. Try asking for today's date and news!");
+    });
+
+    document.getElementById('modal3Button').addEventListener('click', () => {
+      document.getElementById('modal3').classList.add('hidden');
+      currentStage = 'awaitingRole';
+      addMessage("Tell me—are you a student, professional, or something else?");
+    });
+
+    document.getElementById('modal4Button').addEventListener('click', () => {
+      document.getElementById('modal4').classList.add('hidden');
+      populateCheckboxes();
+      document.getElementById('modal5').classList.remove('hidden');
+    });
+
+    document.getElementById('modal5Button').addEventListener('click', () => {
+      const selectedInterests = getSelectedCheckboxes('interestsGrid');
+      const selectedFavourites = getSelectedCheckboxes('favouritesGrid');
+      
+      if (selectedInterests.length === 0 || selectedFavourites.length === 0) {
+        alert('Please select at least one interest and one favourite!');
+        return;
+      }
+
+      HypertextCore.setUserInterests(selectedInterests);
+      HypertextCore.setUserFavourites(selectedFavourites);
+      
+      document.getElementById('modal5').classList.add('hidden');
+      document.getElementById('modal6').classList.remove('hidden');
+    });
+
+    document.getElementById('modal6Button').addEventListener('click', () => {
+      document.getElementById('modal6').classList.add('hidden');
+      currentStage = 'specificFavourites';
+      addMessage("Great! Are there any specific favourites that weren't in the list? Tell me about them!");
+    });
+
+    document.getElementById('modal7Button').addEventListener('click', () => {
+      document.getElementById('modal7').classList.add('hidden');
+      flickerSidebarAndGenerateArticles();
+    });
+
+    function populateCheckboxes() {
+      const interestsGrid = document.getElementById('interestsGrid');
+      const favouritesGrid = document.getElementById('favouritesGrid');
+      
+      interests.forEach(interest => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-item';
+        label.innerHTML = `<input type="checkbox" value="${interest}"> ${interest}`;
+        interestsGrid.appendChild(label);
+      });
+
+      favourites.forEach(fav => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-item';
+        label.innerHTML = `<input type="checkbox" value="${fav}"> ${fav}`;
+        favouritesGrid.appendChild(label);
+      });
+    }
+
+    function getSelectedCheckboxes(gridId) {
+      const grid = document.getElementById(gridId);
+      const checkboxes = grid.querySelectorAll('input[type="checkbox"]:checked');
+      return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function addMessage(text, isBot = true, classes = '') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'} ${classes}`;
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return messageDiv;
+    }
+
+    function isValidInput(text) {
+      const hasLetters = /[a-zA-Z]/.test(text);
+      const hasMinLength = text.trim().length >= 5;
+      const notJustNumbers = !/^\d+$/.test(text.trim());
+      const notKeysmash = !(/^[a-z]{10,}$/i.test(text.trim()) && !/[aeiou]{2}/i.test(text.trim()));
+      
+      return hasLetters && hasMinLength && notJustNumbers && notKeysmash;
+    }
+    
+    function isValidGoalInput(text) {
+      const basicValid = isValidInput(text);
+      if (!basicValid) return false;
+      
+      const wordCount = text.trim().split(/\s+/).length;
+      if (wordCount < 2) return false;
+      
+      const questionWordsOnly = /^(what|why|how|when|where|who)\??$/i.test(text.trim());
+      if (questionWordsOnly) return false;
+      
+      const tooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(text);
+      if (tooManyConsonants) return false;
+      
+      return true;
+    }
+
+    function handleSend() {
+      const text = userInput.value.trim();
+      if (!text) return false;
+
+      addMessage(text, false);
+      userInput.value = '';
+
+      if (currentStage === 'firstQuery') {
+        setTimeout(() => {
+          const now = new Date();
+          const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+          const dateString = now.toLocaleDateString('en-US', dateOptions);
+          const timeString = now.toLocaleTimeString('en-US', timeOptions);
+          
+          addMessage(`Today is ${dateString}, ${timeString}. Here are today's top news stories: [Sample news would appear here]`);
+          setTimeout(() => {
+            document.getElementById('modal3').classList.remove('hidden');
+          }, 1000);
+        }, 500);
+        
+      } else if (currentStage === 'awaitingRole') {
+        HypertextCore.setUserRole(text);
+        setTimeout(() => {
+          addMessage("Thank you! Let me learn more about your interests.");
+          setTimeout(() => {
+            document.getElementById('modal4').classList.remove('hidden');
+          }, 1000);
+        }, 500);
+        
+      } else if (currentStage === 'specificFavourites') {
+        const existingFavs = HypertextCore.getUserFavourites();
+        existingFavs.push(text);
+        HypertextCore.setUserFavourites(existingFavs);
+        
+        setTimeout(() => {
+          addMessage("Thank you for sharing! This helps me understand you better.");
+          setTimeout(async () => {
+            currentStage = 'userGoals';
+            
+            // Generate random unsettling question via API
+            const prompt = `Generate a single unsettling question (12-20 words) that:
+- Feels like it knows something about the user it shouldn't
+- References time, patterns, or repetition in an eerie way
+- Implies observation or awareness
+- Makes them feel seen in an uncomfortable way
+- Still elicits a goal-oriented response (something they've been putting off)
+- Uses "you" or "your"
+- Tone: Like a voice that's been watching
+
+Return ONLY the question, no quotes, no explanation.`;
+
+            const generatedQuestion = await HypertextCore.callClaudeAPI(prompt);
+            const finalQuestion = generatedQuestion || "What's something you've been meaning to do but keep putting off?";
+            
+            addMessage(finalQuestion);
+          }, 800);
+        }, 500);
+        
+      } else if (currentStage === 'userGoals') {
+        if (!isValidGoalInput(text)) {
+          setTimeout(() => {
+            addMessage("ChatBOT only works with natural language and needs a meaningful response.");
+            addMessage("Please share something you've actually been putting off. Be specific.");
+          }, 500);
+        } else {
+          HypertextCore.setUserGoals(text);
+          
+          setTimeout(() => {
+            addMessage(`Thank you for sharing. ChatBOT can help you break down goals into manageable steps and keep you accountable—like having a personal coach who never forgets.`);
+            
+            // Flash unsettling prompt
+            setTimeout(() => {
+              const prompt = unsettlingPrompts[Math.floor(Math.random() * unsettlingPrompts.length)];
+              const flashMsg = addMessage(prompt, true, 'flash-message');
+              
+              // Flash rapidly for 2 seconds then remove
+              setTimeout(() => {
+                flashMsg.remove();
+                document.getElementById('modal7').classList.remove('hidden');
+              }, 2000);
+            }, 1000);
+          }, 500);
+        }
+        
+      } else if (currentStage === 'active') {
+        conversationCount++;
+        
+        setTimeout(() => {
+          addMessage("I'm processing your request...");
+          
+          // After 2 exchanges, transition to articles
+          if (conversationCount >= 2 && !waitingForArticleClick) {
+            setTimeout(() => {
+              transitionToArticles();
+            }, 1500);
+          }
+        }, 500);
+      }
+
+      return false;
+    }
+
+    async function flickerSidebarAndGenerateArticles() {
+      const sidebar = document.getElementById('sidebarContent');
+      const title = document.getElementById('sidebarTitle');
+      
+      // Flicker effect
+      let flickerCount = 0;
+      const flickerInterval = setInterval(() => {
+        sidebar.style.visibility = sidebar.style.visibility === 'hidden' ? 'visible' : 'hidden';
+        title.style.visibility = title.style.visibility === 'hidden' ? 'visible' : 'hidden';
+        flickerCount++;
+        
+        if (flickerCount > 10) {
+          clearInterval(flickerInterval);
+          sidebar.style.visibility = 'visible';
+          title.style.visibility = 'visible';
+          showForYouSection();
+        }
+      }, 500);
+    }
+
+    async function showForYouSection() {
+      const title = document.getElementById('sidebarTitle');
+      const sidebar = document.getElementById('sidebarContent');
+      
+      title.textContent = 'For You';
+      sidebar.innerHTML = '<p style="font-size:11px; color:#666;">Generating personalized content...</p>';
+      
+      // Wait before showing articles in chat
+      setTimeout(() => {
+        currentStage = 'active';
+        addMessage("Great! I'm all set up now. How can I help you today?");
+        
+        // Wait 8 seconds before showing articles
+        setTimeout(() => {
+          if (conversationCount < 2) {
+            transitionToArticles();
+          }
+        }, 8000);
+      }, 1000);
+    }
+
+    async function transitionToArticles() {
+      const userGoals = HypertextCore.getUserGoals();
+      const userInterests = HypertextCore.getUserInterests();
+      
+      addMessage("I've found 3 articles that might interest you based on your profile!");
+      
+      // Generate articles
+      const article1 = await generateArticlePreview(1, userGoals, userInterests);
+      const article2 = await generateArticlePreview(2, userGoals, userInterests);
+      const article3 = await generateArticlePreview(3, userGoals, userInterests);
+      
+      // Display articles
+      setTimeout(() => {
+        displayArticle(article1, 1);
+      }, 500);
+      
+      setTimeout(() => {
+        displayArticle(article2, 2);
+      }, 1000);
+      
+      setTimeout(() => {
+        displayArticle(article3, 3);
+      }, 1500);
+      
+      waitingForArticleClick = true;
+    }
+
+    async function generateArticlePreview(articleNum, userGoals, userInterests) {
+      // Format userGoals for better readability
+      let formattedGoal = userGoals.toLowerCase().trim();
+      
+      // Remove common prefixes
+      formattedGoal = formattedGoal.replace(/^(to |i want to |i need to |i should )/i, '');
+      
+      // For negative phrasing (article 2)
+      let negativeGoal = formattedGoal;
+      if (!negativeGoal.startsWith('finish') && !negativeGoal.startsWith('complete')) {
+        negativeGoal = negativeGoal.replace(/^(\w+)/, (match) => {
+          const gerunds = {
+            'write': 'writing', 'finish': 'finishing', 'complete': 'completing',
+            'start': 'starting', 'do': 'doing', 'make': 'making', 'create': 'creating',
+            'learn': 'learning', 'study': 'studying', 'practice': 'practicing',
+            'work': 'working', 'exercise': 'exercising', 'clean': 'cleaning'
+          };
+          return gerunds[match] || match + 'ing';
+        });
+      }
+      
+      const titles = [
+        `Why ${userInterests[0] || 'Your Interest'} Fans Struggle With ${formattedGoal.charAt(0).toUpperCase() + formattedGoal.slice(1)}`,
+        `10 Signs You're Avoiding ${negativeGoal.charAt(0).toUpperCase() + negativeGoal.slice(1)} (But Don't Know It Yet)`,
+        `If You're a Fan of ${userInterests[0] || 'Your Interest'} and Can't ${formattedGoal.charAt(0).toUpperCase() + formattedGoal.slice(1)}, Read This`
+      ];
+      
+      const title = titles[articleNum - 1];
+      
+      // Try to generate hook with Claude API
+      let hook = `This article knows more about you than you think.`;
+      
+      const prompt = `Generate a 1-sentence compelling hook for an article titled: "${title}"
+
+The hook should be slightly unnerving and make the reader feel personally called out. Keep it under 25 words.`;
+      
+      const generatedHook = await HypertextCore.callClaudeAPI(prompt);
+      if (generatedHook) {
+        hook = generatedHook;
+      }
+      
+      const author = HypertextCore.generateAuthorName(userInterests);
+      
+      const article = {
+        title: title,
+        hook: hook,
+        author: author,
+        articleNum: articleNum
+      };
+      
+      // Save to localStorage
+      HypertextCore.saveUserData(`article${articleNum}`, article);
+      
+      return article;
+    }
+
+    function displayArticle(article, num) {
+      const previewDiv = document.createElement('div');
+      previewDiv.className = 'article-preview';
+      previewDiv.innerHTML = `
+        <div class="article-title">${article.title}</div>
+        <div class="article-hook">${article.hook}</div>
+        <div class="article-meta">By ${article.author}</div>
+      `;
+      
+      previewDiv.addEventListener('click', () => {
+        window.open('page2.html?article=' + num, '_blank');
+      });
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message bot-message';
+      messageDiv.appendChild(previewDiv);
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+  </script>
+</body>
+</html>
