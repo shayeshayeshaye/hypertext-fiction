@@ -17,7 +17,7 @@ class HypertextFictionCore {
       this.proxyEndpoint = 'http://localhost:3000/api/generate'; // Local testing
     } else {
       // REPLACE THIS with your AWS API Gateway URL after deployment
-      this.proxyEndpoint = 'https://YOUR-AWS-API-GATEWAY-URL.execute-api.REGION.amazonaws.com/api/generate';
+      this.proxyEndpoint = 'https://jd6xzj4apg.execute-api.ap-southeast-2.amazonaws.com';
     }
     
     this.apiEndpoint = 'https://api.anthropic.com/v1/messages'; // Direct API (fallback)
