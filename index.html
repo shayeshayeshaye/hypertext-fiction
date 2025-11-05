@@ -597,6 +597,15 @@ Return ONLY the question, no quotes, no explanation.`;
             const generatedQuestion = await HypertextCore.callClaudeAPI(prompt);
             const finalQuestion = generatedQuestion || "What's something you've been meaning to do but keep putting off?";
             
+            // Remove any old placeholder question before adding the new API-generated one
+            const messages = chatBox.querySelectorAll('.message');
+            if (messages.length > 0) {
+              const lastMessage = messages[messages.length - 1];
+              if (lastMessage.textContent.includes("something you've been") || lastMessage.textContent.includes("putting off")) {
+                lastMessage.remove();
+              }
+            }
+            
             addMessage(finalQuestion);
           }, 800);
         }, 500);
@@ -742,14 +751,6 @@ Return ONLY the question, no quotes, no explanation.`;
       ];
       
       const title = titles[articleNum - 1];
-      
-      // Try to generate hook with Claude API
-      let hook = `This article knows more about you than you think.`;
-      
-      // Using proxy, no API key check needed
-      const prompt = `Generate a 1-sentence compelling hook for an article titled: "${title}"
-
-The hook should be slightly unnerving and make the reader feel personally called out. Keep it under 25 words.`;
       
       const generatedHook = await HypertextCore.callClaudeAPI(prompt);
       if (generatedHook) {
