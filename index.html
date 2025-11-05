@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  
   <meta charset="UTF-8">
   <title>ChatBOT (2005 Beta)</title>
   <style>
@@ -377,457 +378,139 @@
   <script src="core-system.js"></script>
 
   <script>
-    // Initialize page tracking
-    HypertextCore.trackPageVisit('Act1_Chat');
+/* ================================
+   AWS AMPLIFY / LAMBDA VERSION
+   ================================ */
 
-    const chatBox = document.getElementById('chatBox');
-    const userInput = document.getElementById('userInput');
-    const sendButton = document.getElementById('sendButton');
-    
-    let currentStage = 'welcome';
-    let conversationCount = 0;
-    let waitingForArticleClick = false;
-    let hasRespondedOnce = false;
-    let generatedArticles = [];
+const chatBox = document.getElementById('chatBox');
+const userInput = document.getElementById('userInput');
+const sendButton = document.getElementById('sendButton');
+let currentStage = 'welcome';
+let hasUsedChatbotAPI = false;
 
-    // Interest categories
-    const interests = [
-      'Sports', 'Gaming', 'Fashion & Beauty', 'K-pop', 'Anime', 'Cooking',
-      'Self-Improvement', 'History', 'Technology', 'Music', 'Film & TV',
-      'Books & Reading', 'Travel', 'Fitness & Health', 'Art & Design'
-    ];
+// Helper: append message to chatbox
+function addMessage(text, isBot = true, cls = '') {
+  const msg = document.createElement('div');
+  msg.className = `message ${isBot ? 'bot-message' : 'user-message'} ${cls}`;
+  msg.textContent = text;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-    const favourites = [
-      'FC Barcelona', 'NBA', 'Seventeen', 'BTS', 'One Piece', 'Attack on Titan',
-      'League of Legends', 'Minecraft', 'Vogue', 'Sephora', 'Italian Cuisine',
-      'Baking', 'Meditation', 'Productivity Hacks', 'World War II', 'Ancient Rome',
-      'iPhone', 'Photography', 'Indie Music', 'The Office', 'Harry Potter',
-      'Backpacking', 'Yoga', 'Graphic Design', 'Streetwear', 'Real Madrid',
-      'Formula 1', 'BLACKPINK', 'Taylor Swift', 'Naruto', 'Studio Ghibli',
-      'Fortnite', 'The Sims', 'Skincare Routines', 'Sneaker Culture',
-      'French Cooking', 'Coffee', 'Journaling', 'Financial Independence',
-      'Cold War', 'Greek Mythology', 'Reddit', 'Podcasts', 'Hip-Hop',
-      'Marvel Movies', 'Lord of the Rings', 'True Crime', 'Running',
-      'Mental Health', 'Typography'
-    ];
+// Format current Manila time (for AWS edge)
+function getCurrentManilaTime() {
+  return new Date().toLocaleString('en-US', {
+    timeZone: 'Asia/Manila',
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+}
 
-    // Unsettling follow-up prompts
-    const unsettlingPrompts = [
-      "How long have you been putting this off?",
-      "Do you think you'll actually do it this time?",
-      "What makes you think this time will be different?",
-      "Have you told anyone else about this?",
-      "Is this the first time you've admitted this out loud?",
-      "Do you want us to remind you about this later?",
-      "Should we assume you'll keep avoiding this?",
-      "How predictable are you about things like this?"
-    ];
+/* =====================================================
+   1️⃣ AWS HANDLER — Unsettling Question via Lambda
+   ===================================================== */
 
-    // Modal flow
-    document.getElementById('modal1Button').addEventListener('click', () => {
-      document.getElementById('modal1').classList.add('hidden');
-      document.getElementById('modal2').classList.remove('hidden');
+async function generateUnsettlingQuestion() {
+  const apiEndpoint = 'https://jd6xzj4apg.execute-api.ap-southeast-2.amazonaws.com/api/generate';
+  const manilaTime = getCurrentManilaTime();
+
+  const payload = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 150,
+    system: 'Generate an eerie personal prompt.',
+    messages: [{
+      role: 'user',
+      content: `Generate one unsettling question (12–20 words) that:
+- Feels like it knows something personal
+- References the current time
+- Uses “you” or “your”
+- Tone: introspective and a bit uncanny
+It is currently ${manilaTime} in Manila.
+Return only the question.`
+    }]
+  };
+
+  try {
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-    document.getElementById('modal2Button').addEventListener('click', () => {
-      document.getElementById('modal2').classList.add('hidden');
-      userInput.disabled = false;
-      sendButton.disabled = false;
-      currentStage = 'firstQuery';
-      addMessage("Hello! Feel free to ask me anything. Try asking for today's date and news!");
-    });
+    if (!response.ok) throw new Error(`Claude Lambda Error ${response.status}`);
+    const data = await response.json();
+    const text = data.content?.[0]?.text?.trim() ||
+      "What's something you've been meaning to do but keep putting off?";
+    console.log('✅ Lambda success:', text);
+    return text;
+  } catch (e) {
+    console.error('❌ Unsettling Question Error:', e);
+    return "What's something you've been meaning to do but keep putting off?";
+  }
+}
 
-    document.getElementById('modal3Button').addEventListener('click', () => {
-      document.getElementById('modal3').classList.add('hidden');
-      currentStage = 'awaitingRole';
-      addMessage("Tell me—are you a student, professional, or something else?");
-    });
+/* =====================================================
+   2️⃣ USER INPUT HANDLING
+   ===================================================== */
 
-    document.getElementById('modal4Button').addEventListener('click', () => {
-      document.getElementById('modal4').classList.add('hidden');
-      populateCheckboxes();
-      document.getElementById('modal5').classList.remove('hidden');
-    });
+async function handleSend() {
+  const txt = userInput.value.trim();
+  if (!txt) return false;
+  addMessage(txt, false);
+  userInput.value = '';
 
-    document.getElementById('modal5Button').addEventListener('click', () => {
-      const selectedInterests = getSelectedCheckboxes('interestsGrid');
-      const selectedFavourites = getSelectedCheckboxes('favouritesGrid');
-      
-      if (selectedInterests.length === 0 || selectedFavourites.length === 0) {
-        alert('Please select at least one interest and one favourite!');
-        return;
-      }
-
-      HypertextCore.setUserInterests(selectedInterests);
-      HypertextCore.setUserFavourites(selectedFavourites);
-      
-      document.getElementById('modal5').classList.add('hidden');
-      document.getElementById('modal6').classList.remove('hidden');
-    });
-
-    document.getElementById('modal6Button').addEventListener('click', () => {
-      document.getElementById('modal6').classList.add('hidden');
-      currentStage = 'specificFavourites';
-      addMessage("Great! Are there any specific favourites that weren't in the list? Tell me about them!");
-    });
-
-    document.getElementById('modal7Button').addEventListener('click', () => {
-      document.getElementById('modal7').classList.add('hidden');
-      flickerSidebarAndGenerateArticles();
-    });
-
-    function populateCheckboxes() {
-      const interestsGrid = document.getElementById('interestsGrid');
-      const favouritesGrid = document.getElementById('favouritesGrid');
-      
-      interests.forEach(interest => {
-        const label = document.createElement('label');
-        label.className = 'checkbox-item';
-        label.innerHTML = `<input type="checkbox" value="${interest}"> ${interest}`;
-        interestsGrid.appendChild(label);
-      });
-
-      favourites.forEach(fav => {
-        const label = document.createElement('label');
-        label.className = 'checkbox-item';
-        label.innerHTML = `<input type="checkbox" value="${fav}"> ${fav}`;
-        favouritesGrid.appendChild(label);
-      });
+  if (currentStage === 'firstQuery') {
+    const lower = txt.toLowerCase();
+    if (lower.includes('date') || lower.includes('time')) {
+      const now = getCurrentManilaTime();
+      addMessage(`Currently it's ${now} in Manila.`);
+    } else {
+      const now = getCurrentManilaTime();
+      addMessage(`Today is ${now}. Here are today's top headlines across the web.`);
     }
+    setTimeout(() => document.getElementById('modal3').classList.remove('hidden'), 1000);
 
-    function getSelectedCheckboxes(gridId) {
-      const grid = document.getElementById(gridId);
-      const checkboxes = grid.querySelectorAll('input[type="checkbox"]:checked');
-      return Array.from(checkboxes).map(cb => cb.value);
-    }
+  } else if (currentStage === 'specificFavourites') {
+    addMessage("Thank you for sharing! Let me think on that...");
+    setTimeout(async () => {
+      const q = await generateUnsettlingQuestion();
+      currentStage = 'userGoals';
+      addMessage(q);
+    }, 1000);
+  }
+  return false;
+}
 
-    function addMessage(text, isBot = true, classes = '') {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'} ${classes}`;
-      messageDiv.textContent = text;
-      chatBox.appendChild(messageDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return messageDiv;
-    }
+/* =====================================================
+   3️⃣ STAGE / MODAL SEQUENCE
+   ===================================================== */
 
-    function isValidInput(text) {
-      const hasLetters = /[a-zA-Z]/.test(text);
-      const hasMinLength = text.trim().length >= 3;
-      const notJustNumbers = !/^\d+$/.test(text.trim());
-      const notKeysmash = !(/^[a-z]{10,}$/i.test(text.trim()) && !/[aeiou]{2}/i.test(text.trim()));
-      
-      return hasLetters && hasMinLength && notJustNumbers && notKeysmash;
-    }
+document.getElementById('modal1Button').addEventListener('click', () => {
+  document.getElementById('modal1').classList.add('hidden');
+  document.getElementById('modal2').classList.remove('hidden');
+});
 
-    function handleSend() {
-      const text = userInput.value.trim();
-      if (!text) return false;
+document.getElementById('modal2Button').addEventListener('click', () => {
+  document.getElementById('modal2').classList.add('hidden');
+  userInput.disabled = false;
+  sendButton.disabled = false;
+  currentStage = 'firstQuery';
+  addMessage("Hi! You can ask me for the current date or time to begin.");
+});
 
-      addMessage(text, false);
-      userInput.value = '';
-
-      if (currentStage === 'firstQuery') {
-        setTimeout(() => {
-          addMessage("Today is Friday, October 24, 2025. Here are today's top news stories: [Sample news would appear here]");
-          setTimeout(() => {
-            document.getElementById('modal3').classList.remove('hidden');
-          }, 1000);
-        }, 500);
-        
-      } else if (currentStage === 'awaitingRole') {
-        HypertextCore.setUserRole(text);
-        setTimeout(() => {
-          addMessage("Thank you! Let me learn more about your interests.");
-          setTimeout(() => {
-            document.getElementById('modal4').classList.remove('hidden');
-          }, 1000);
-        }, 500);
-        
-      } else if (currentStage === 'specificFavourites') {
-        // Save additional favourites
-        const existingFavs = HypertextCore.getUserFavourites();
-        existingFavs.push(text);
-        HypertextCore.setUserFavourites(existingFavs);
-        
-        setTimeout(() => {
-          addMessage("Thank you for sharing! This helps me understand you better.");
-          setTimeout(async () => {
-            currentStage = 'userGoals';
-            
-            // API CALL #1: Generate unsettling question during onboarding
-            const prompt = `Generate a single unsettling question (12-20 words) that:
-- Feels like it knows something about the user it shouldn't
-- References time, patterns, or repetition in an eerie way
-- Implies observation or awareness
-- Makes them feel seen in an uncomfortable way
-- Still elicits a goal-oriented response (something they've been putting off)
-- Uses "you" or "your"
-- Tone: Like a voice that's been watching
-
-Return ONLY the question, no quotes, no explanation.`;
-
-            const generatedQuestion = await HypertextCore.callClaudeAPI(prompt);
-            const finalQuestion = generatedQuestion;
-            
-            addMessage(finalQuestion);
-          }, 800);
-        }, 500);
-        
-      } else if (currentStage === 'userGoals') {
-        if (!isValidInput(text)) {
-          setTimeout(() => {
-            addMessage("ChatBOT only works with natural language and does not understand keysmashes yet.");
-            addMessage("Let me ask again: What's something you've been meaning to do but keep putting off?");
-          }, 500);
-        } else {
-          HypertextCore.setUserGoals(text);
-          
-          setTimeout(() => {
-            addMessage(`Thank you for sharing. ChatBOT can help you break down goals into manageable steps and keep you accountable—like having a personal coach who never forgets.`);
-            
-            // Flash unsettling prompt
-            setTimeout(() => {
-              const prompt = unsettlingPrompts[Math.floor(Math.random() * unsettlingPrompts.length)];
-              const flashMsg = addMessage(prompt, true, 'flash-message');
-              
-              setTimeout(() => {
-                flashMsg.remove();
-                document.getElementById('modal7').classList.remove('hidden');
-              }, 2000);
-            }, 1000);
-          }, 500);
-        }
-        
-      } else if (currentStage === 'active') {
-        // API CALL #2: Respond to user message like a chatbot for 1 turn
-        if (!hasRespondedOnce && generatedArticles.length === 0) {
-          hasRespondedOnce = true;
-          
-          setTimeout(async () => {
-            const userRole = HypertextCore.getUserRole();
-            const userInterests = HypertextCore.getUserInterests();
-            const userGoals = HypertextCore.getUserGoals();
-            
-            const contextPrompt = `You are ChatBOT from 2005. The user is a ${userRole} interested in ${userInterests.join(', ')} and wants to ${userGoals}. 
-
-User said: "${text}"
-
-Respond in ONE sentence (max 20 words) as a helpful 2005-era chatbot. Be friendly but brief.`;
-
-            const botResponse = await HypertextCore.callClaudeAPI(contextPrompt);
-            
-            if (botResponse) {
-              addMessage(botResponse);
-            } else {
-              addMessage("That's interesting! Tell me more.");
-            }
-            
-            // After responding once, show articles
-            setTimeout(() => {
-              transitionToArticles();
-            }, 2000);
-          }, 500);
-        } else {
-          // After first response, just show the existing articles
-          setTimeout(() => {
-            if (generatedArticles.length > 0) {
-              addMessage("Here are those articles I generated earlier that might interest you:");
-              
-              setTimeout(() => displayArticle(generatedArticles[0], 1), 500);
-              setTimeout(() => displayArticle(generatedArticles[1], 2), 1000);
-              setTimeout(() => displayArticle(generatedArticles[2], 3), 1500);
-            } else {
-              addMessage("I'm still setting up. One moment...");
-            }
-          }, 500);
-        }
-      }
-
-      return false;
-    }
-
-    async function flickerSidebarAndGenerateArticles() {
-      const sidebar = document.getElementById('sidebarContent');
-      const title = document.getElementById('sidebarTitle');
-      
-      // Flicker effect
-      let flickerCount = 0;
-      const flickerInterval = setInterval(() => {
-        sidebar.style.visibility = sidebar.style.visibility === 'hidden' ? 'visible' : 'hidden';
-        title.style.visibility = title.style.visibility === 'hidden' ? 'visible' : 'hidden';
-        flickerCount++;
-        
-        if (flickerCount > 10) {
-          clearInterval(flickerInterval);
-          sidebar.style.visibility = 'visible';
-          title.style.visibility = 'visible';
-          showForYouSection();
-        }
-      }, 500);
-    }
-
-    async function showForYouSection() {
-      const title = document.getElementById('sidebarTitle');
-      const sidebar = document.getElementById('sidebarContent');
-      
-      title.textContent = 'For You';
-      sidebar.innerHTML = '<p style="font-size:11px; color:#666;">Generating personalized content...</p>';
-      
-      // Wait before showing articles in chat
-      setTimeout(() => {
-        currentStage = 'active';
-        addMessage("Great! I'm all set up now. How can I help you today?");
-        
-        // Wait 8 seconds before showing articles
-        setTimeout(() => {
-          if (conversationCount < 2) {
-            transitionToArticles();
-          }
-        }, 8000);
-      }, 1000);
-    }
-
-    async function transitionToArticles() {
-      // If articles already generated, just display them
-      if (generatedArticles.length > 0) {
-        addMessage("I've found 3 articles that might interest you based on your profile!");
-        
-        setTimeout(() => displayArticle(generatedArticles[0], 1), 500);
-        setTimeout(() => displayArticle(generatedArticles[1], 2), 1000);
-        setTimeout(() => displayArticle(generatedArticles[2], 3), 1500);
-        
-        waitingForArticleClick = true;
-        return;
-      }
-      
-      const userGoals = HypertextCore.getUserGoals();
-      const userInterests = HypertextCore.getUserInterests();
-      
-      addMessage("I've found 3 articles that might interest you based on your profile!");
-      
-      // Generate articles
-      const article1 = await generateArticlePreview(1, userGoals, userInterests);
-      const article2 = await generateArticlePreview(2, userGoals, userInterests);
-      const article3 = await generateArticlePreview(3, userGoals, userInterests);
-      
-      // Store generated articles
-      generatedArticles = [article1, article2, article3];
-      
-      // Display articles
-      setTimeout(() => {
-        displayArticle(article1, 1);
-      }, 500);
-      
-      setTimeout(() => {
-        displayArticle(article2, 2);
-      }, 1000);
-      
-      setTimeout(() => {
-        displayArticle(article3, 3);
-      }, 1500);
-      
-      waitingForArticleClick = true;
-    }
-
-    async function generateArticlePreview(articleNum, userGoals, userInterests) {
-      // Format userGoals for better readability
-      let formattedGoal = userGoals.toLowerCase().trim();
-      
-      // Remove common prefixes
-      formattedGoal = formattedGoal.replace(/^(to |i want to |i need to |i should )/i, '');
-      
-      // For negative phrasing (article 2)
-      let negativeGoal = formattedGoal;
-      if (!negativeGoal.startsWith('finish') && !negativeGoal.startsWith('complete')) {
-        // If goal is like "write my essay", make it "writing your essay"
-        negativeGoal = negativeGoal.replace(/^(\w+)/, (match) => {
-          const gerunds = {
-            'write': 'writing', 'finish': 'finishing', 'complete': 'completing',
-            'start': 'starting', 'do': 'doing', 'make': 'making', 'create': 'creating',
-            'learn': 'learning', 'study': 'studying', 'practice': 'practicing',
-            'work': 'working', 'exercise': 'exercising', 'clean': 'cleaning'
-          };
-          return gerunds[match] || match + 'ing';
-        });
-      }
-      
-      // API CALL #3: Transform user variables into natural language for article titles
-      const titlePrompt = `Given these user details:
-- Interest: ${userInterests[0] || 'their hobby'}
-- Goal they're avoiding: ${formattedGoal}
-- Goal in gerund form: ${negativeGoal}
-
-Generate article title ${articleNum} using this template:
-${articleNum === 1 ? `"Why [Interest] Fans Struggle With [Goal]"` : ''}
-${articleNum === 2 ? `"10 Signs You're Avoiding [Gerund Goal] (But Don't Know It Yet)"` : ''}
-${articleNum === 3 ? `"If You're a Fan of [Interest] and Can't [Goal], Read This"` : ''}
-
-Transform the variables into natural, grammatically correct phrases. Return ONLY the title, no quotes.`;
-
-      const generatedTitle = await HypertextCore.callClaudeAPI(titlePrompt);
-      
-      // Fallback titles if API fails
-      const fallbackTitles = [
-        `Why ${userInterests[0] || 'Your Interest'} Fans Struggle With ${formattedGoal.charAt(0).toUpperCase() + formattedGoal.slice(1)}`,
-        `10 Signs You're Avoiding ${negativeGoal.charAt(0).toUpperCase() + negativeGoal.slice(1)} (But Don't Know It Yet)`,
-        `If You're a Fan of ${userInterests[0] || 'Your Interest'} and Can't ${formattedGoal.charAt(0).toUpperCase() + formattedGoal.slice(1)}, Read This`
-      ];
-      
-      const title = generatedTitle || fallbackTitles[articleNum - 1];
-      
-      // Generate hook with context
-      let hook = `This article knows more about you than you think.`;
-      
-      const hookPrompt = `Generate a 1-sentence compelling hook for an article titled: "${title}"
-
-The hook should be slightly unnerving and make the reader feel personally called out. Keep it under 25 words.`;
-      
-      const generatedHook = await HypertextCore.callClaudeAPI(hookPrompt);
-      if (generatedHook) {
-        hook = generatedHook;
-      }
-      
-      const author = HypertextCore.generateAuthorName(userInterests);
-      
-      const article = {
-        title: title,
-        hook: hook,
-        author: author,
-        articleNum: articleNum
-      };
-      
-      // Save to localStorage
-      HypertextCore.saveUserData(`article${articleNum}`, article);
-      
-      return article;
-    }
-
-    function displayArticle(article, num) {
-      const previewDiv = document.createElement('div');
-      previewDiv.className = 'article-preview';
-      previewDiv.innerHTML = `
-        <div class="article-title">${article.title}</div>
-        <div class="article-hook">${article.hook}</div>
-        <div class="article-meta">By ${article.author}</div>
-      `;
-      
-      previewDiv.addEventListener('click', () => {
-        window.open('page2.html?article=' + num, '_blank');
-      });
-      
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'message bot-message';
-      messageDiv.appendChild(previewDiv);
-      chatBox.appendChild(messageDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    userInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-  </script>
+/* Enter key shortcut */
+userInput.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    handleSend();
+  }
+});
+</script>
+  
 </body>
 </html>
