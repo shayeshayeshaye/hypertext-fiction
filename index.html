@@ -745,7 +745,7 @@
 Return ONLY the question, no quotes, no explanation.`;
 
             const generatedQuestion = await HypertextCore.callClaudeAPI(prompt);
-            const finalQuestion = generatedQuestion || "What's something you've been meaning to do but keep putting off?";
+            const finalQuestion = generatedQuestion;
             
             addMessage(finalQuestion);
           }, 800);
