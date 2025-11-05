@@ -231,13 +231,17 @@
       50% { opacity: 1; }
     }
     .flash-message {
-      animation: flash 2s;
+      animation: flash 0.1s infinite;
       color: #b21;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <div style="width: 100%; height: 110px; background-color: #003366; padding: 20px; display: flex; align-items: center; box-sizing: border-box;">
+    <span style="font-size: 40px; font-weight: bold; color: #fff; margin-right: 20px; white-space: nowrap;">CRWR130</span>
+    <span style="font-size: 20px; color: #fff; line-height: 1.4;">This is a project created under Writing for New and Emergent Media with Professor Carljoe Javier that envisions LLMs in 2005.</span>
+  </div>
   <div id="wrapper">
     <div id="header">
       <h1>ChatBOT</h1>
@@ -510,11 +514,31 @@
 
     function isValidInput(text) {
       const hasLetters = /[a-zA-Z]/.test(text);
-      const hasMinLength = text.trim().length >= 3;
+      const hasMinLength = text.trim().length >= 5; // Increased from 3 to 5
       const notJustNumbers = !/^\d+$/.test(text.trim());
       const notKeysmash = !(/^[a-z]{10,}$/i.test(text.trim()) && !/[aeiou]{2}/i.test(text.trim()));
       
       return hasLetters && hasMinLength && notJustNumbers && notKeysmash;
+    }
+    
+    function isValidGoalInput(text) {
+      // More strict validation for the goal question
+      const basicValid = isValidInput(text);
+      if (!basicValid) return false;
+      
+      // Must have at least 2 words
+      const wordCount = text.trim().split(/\s+/).length;
+      if (wordCount < 2) return false;
+      
+      // Check for question words only (invalid responses)
+      const questionWordsOnly = /^(what|why|how|when|where|who)\??$/i.test(text.trim());
+      if (questionWordsOnly) return false;
+      
+      // Check for gibberish (too many consonants in a row)
+      const tooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(text);
+      if (tooManyConsonants) return false;
+      
+      return true;
     }
 
     function handleSend() {
@@ -526,7 +550,13 @@
 
       if (currentStage === 'firstQuery') {
         setTimeout(() => {
-          addMessage("Today is Friday, October 24, 2025. Here are today's top news stories: [Sample news would appear here]");
+          const now = new Date();
+          const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+          const dateString = now.toLocaleDateString('en-US', dateOptions);
+          const timeString = now.toLocaleTimeString('en-US', timeOptions);
+          
+          addMessage(`Today is ${dateString}, ${timeString}. Here are today's top news stories: [Sample news would appear here]`);
           setTimeout(() => {
             document.getElementById('modal3').classList.remove('hidden');
           }, 1000);
@@ -549,17 +579,33 @@
         
         setTimeout(() => {
           addMessage("Thank you for sharing! This helps me understand you better.");
-          setTimeout(() => {
+          setTimeout(async () => {
             currentStage = 'userGoals';
-            addMessage("What's something you've been meaning to do but keep putting off?");
+            
+            // Generate random unsettling question via API
+            const prompt = `Generate a single unsettling question (12-20 words) that:
+- Feels like it knows something about the user it shouldn't
+- References time, patterns, or repetition in an eerie way
+- Implies observation or awareness
+- Makes them feel seen in an uncomfortable way
+- Still elicits a goal-oriented response (something they've been putting off)
+- Uses "you" or "your"
+- Tone: Like a voice that's been watching
+
+Return ONLY the question, no quotes, no explanation.`;
+
+            const generatedQuestion = await HypertextCore.callClaudeAPI(prompt);
+            const finalQuestion = generatedQuestion || "What's something you've been meaning to do but keep putting off?";
+            
+            addMessage(finalQuestion);
           }, 800);
         }, 500);
         
       } else if (currentStage === 'userGoals') {
-        if (!isValidInput(text)) {
+        if (!isValidGoalInput(text)) {
           setTimeout(() => {
-            addMessage("ChatBOT only works with natural language and does not understand keysmashes yet.");
-            addMessage("Let me ask again: What's something you've been meaning to do but keep putting off?");
+            addMessage("ChatBOT only works with natural language and needs a meaningful response.");
+            addMessage("Please share something you've actually been putting off. Be specific.");
           }, 500);
         } else {
           HypertextCore.setUserGoals(text);
@@ -572,6 +618,7 @@
               const prompt = unsettlingPrompts[Math.floor(Math.random() * unsettlingPrompts.length)];
               const flashMsg = addMessage(prompt, true, 'flash-message');
               
+              // Flash rapidly for 2 seconds then remove
               setTimeout(() => {
                 flashMsg.remove();
                 document.getElementById('modal7').classList.remove('hidden');
