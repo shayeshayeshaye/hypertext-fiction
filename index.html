@@ -315,14 +315,13 @@
     </div>
   </div>
 
-  <!-- Modal 3: Role selection -->
-  <div id="modal3" class="modal-overlay hidden">
-    <div class="modal">
-      <h2>About You</h2>
-      <p>ChatBOT has been trained to assist users from educational settings to the workplace. Tell us a bit about yourself—are you a student, professional, or something else?</p>
-      <button class="modal-button" id="modal3Button">Next →</button>
-    </div>
+<div id="modal3" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>About You</h2>
+    <p>ChatBOT has been trained to assist users from educational settings to the workplace. Tell us a bit about yourself—are you a student, professional, or something else?</p>
+    <button class="modal-button" id="modal3Button">Next →</button>
   </div>
+</div>
 
   <!-- Modal 4: Personalization intro -->
   <div id="modal4" class="modal-overlay hidden">
@@ -420,19 +419,16 @@ async function generateUnsettlingQuestion() {
   const manilaTime = getCurrentManilaTime();
 
   const payload = {
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 150,
-    system: 'Generate an eerie personal prompt.',
-    messages: [{
-      role: 'user',
-      content: `Generate one unsettling question (12–20 words) that:
+ const payload = {
+  prompt: `Generate one unsettling question (12–20 words) that:
 - Feels like it knows something personal
 - References the current time
 - Uses “you” or “your”
 - Tone: introspective and a bit uncanny
-It is currently ${manilaTime} in Manila.
+It is currently ${manilaTime} in Manila.  
 Return only the question.`
-    }]
+};
+    }
   };
 
   try {
@@ -486,23 +482,40 @@ async function handleSend() {
   return false;
 }
 
-/* =====================================================
-   3️⃣ STAGE / MODAL SEQUENCE
-   ===================================================== */
+  /* ===========================
+     Modal 3 – About You
+  =========================== */
+  const modal3Button = document.getElementById('modal3Button');
+  if (modal3Button) {
+    modal3Button.addEventListener('click', () => {
+      console.log("✅ Modal 3 clicked — opening Modal 4");
+      document.getElementById('modal3').classList.add('hidden');
+      document.getElementById('modal4').classList.remove('hidden');
 
-document.getElementById('modal1Button').addEventListener('click', () => {
-  document.getElementById('modal1').classList.add('hidden');
-  document.getElementById('modal2').classList.remove('hidden');
-});
+      // set conversation state and nudge user
+      currentStage = 'awaitingRole';
+      addMessage("Tell me a bit about yourself — are you a student, professional, or something else?");
+    });
+  }
 
-document.getElementById('modal2Button').addEventListener('click', () => {
-  document.getElementById('modal2').classList.add('hidden');
-  userInput.disabled = false;
-  sendButton.disabled = false;
-  currentStage = 'firstQuery';
-  addMessage("Hi! You can ask me for the current date or time to begin.");
-});
+  /* ===========================
+     Modal 4 – Personalization
+  =========================== */
+  const modal4Button = document.getElementById('modal4Button');
+  if (modal4Button) {
+    modal4Button.addEventListener('click', () => {
+      console.log("✅ Modal 4 clicked — opening interests modal 5");
+      document.getElementById('modal4').classList.add('hidden');
 
+      // Message transition
+      addMessage("Great! Let’s personalize your experience. Select your interests and favourites next.");
+
+      // open interests modal if present
+      const modal5 = document.getElementById('modal5');
+      if (modal5) modal5.classList.remove('hidden');
+      currentStage = 'selectingPreferences';
+    });
+  }
 /* Enter key shortcut */
 userInput.addEventListener('keypress', e => {
   if (e.key === 'Enter') {
@@ -510,6 +523,7 @@ userInput.addEventListener('keypress', e => {
     handleSend();
   }
 });
+  
 </script>
   
 </body>
