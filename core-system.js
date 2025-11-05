@@ -9,8 +9,17 @@ class HypertextFictionCore {
     this.apiKey = null; // Not needed when using proxy
     // Toggle between proxy (local/production) and direct API
     this.useProxy = true;
-    this.proxyEndpoint = 'http://localhost:3000/api/generate'; // For local testing
-    // this.proxyEndpoint = 'https://your-aws-api.amazonaws.com/api/generate'; // For production
+    
+    // Automatically detect if running locally or in production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+      this.proxyEndpoint = 'http://localhost:3000/api/generate'; // Local testing
+    } else {
+      // REPLACE THIS with your AWS API Gateway URL after deployment
+      this.proxyEndpoint = 'https://YOUR-AWS-API-GATEWAY-URL.execute-api.REGION.amazonaws.com/api/generate';
+    }
+    
     this.apiEndpoint = 'https://api.anthropic.com/v1/messages'; // Direct API (fallback)
     this.sessionId = this.getOrCreateSessionId();
     this.initializeStorage();
