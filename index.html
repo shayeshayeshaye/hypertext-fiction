@@ -393,9 +393,9 @@
       const sidebarContent = document.getElementById('sidebarContent');
       
       let currentStage = 'welcome';
-      let conversationCount = 0;
       let hasUsedChatbotAPI = false;
       let generatedArticles = [];
+      let generatedUnsettlingQuestion = '';
 
       const interests = [
         'Sports', 'Gaming', 'Fashion & Beauty', 'K-pop', 'Anime', 'Cooking',
@@ -417,13 +417,29 @@
         'Mental Health', 'Typography'
       ];
 
-      // Modal handlers
+      const unsettlingPrompts = [
+        "How long have you been putting this off?",
+        "Do you think you'll actually do it this time?",
+        "What makes you think tomorrow will be different?",
+        "Have you told anyone else about this?",
+        "Is this the first time you've admitted this out loud?",
+        "Do you want us to remind you about this later?",
+        "Should we assume you'll keep avoiding this?",
+        "How predictable are you about things like this?"
+      ];
+
+      // ============================================
+      // MODAL BUTTON HANDLERS
+      // ============================================
+
       document.getElementById('modal1Button').addEventListener('click', () => {
+        console.log('Modal 1 → Modal 2');
         document.getElementById('modal1').classList.add('hidden');
         document.getElementById('modal2').classList.remove('hidden');
       });
 
       document.getElementById('modal2Button').addEventListener('click', () => {
+        console.log('Modal 2 → Enable chat');
         document.getElementById('modal2').classList.add('hidden');
         userInput.disabled = false;
         sendButton.disabled = false;
@@ -432,18 +448,21 @@
       });
 
       document.getElementById('modal3Button').addEventListener('click', () => {
+        console.log('Modal 3 → Await role');
         document.getElementById('modal3').classList.add('hidden');
         currentStage = 'awaitingRole';
         addMessage("Tell me—are you a student, professional, or something else?");
       });
 
       document.getElementById('modal4Button').addEventListener('click', () => {
+        console.log('Modal 4 → Modal 5 (checkboxes)');
         document.getElementById('modal4').classList.add('hidden');
         populateCheckboxes();
         document.getElementById('modal5').classList.remove('hidden');
       });
 
       document.getElementById('modal5Button').addEventListener('click', () => {
+        console.log('Modal 5 → Collecting checkboxes');
         const selectedInterests = getSelectedCheckboxes('interestsGrid');
         const selectedFavourites = getSelectedCheckboxes('favouritesGrid');
         
@@ -455,27 +474,39 @@
         HypertextCore.setUserInterests(selectedInterests);
         HypertextCore.setUserFavourites(selectedFavourites);
         
+        console.log('Saved interests:', selectedInterests);
+        console.log('Saved favourites:', selectedFavourites);
+        
         document.getElementById('modal5').classList.add('hidden');
         document.getElementById('modal6').classList.remove('hidden');
       });
 
       document.getElementById('modal6Button').addEventListener('click', () => {
+        console.log('Modal 6 → Ask for specific favourites');
         document.getElementById('modal6').classList.add('hidden');
         currentStage = 'specificFavourites';
         addMessage("Great! Are there any specific favourites that weren't in the list? Tell me about them!");
       });
 
       document.getElementById('modal7Button').addEventListener('click', async () => {
+        console.log('Modal 7 → Generate articles');
         document.getElementById('modal7').classList.add('hidden');
         currentStage = 'active';
         
-        // Generate articles with API Call #3
+        // API CALL #3: Generate articles
         await generateArticlesWithAPI();
       });
+
+      // ============================================
+      // HELPER FUNCTIONS
+      // ============================================
 
       function populateCheckboxes() {
         const interestsGrid = document.getElementById('interestsGrid');
         const favouritesGrid = document.getElementById('favouritesGrid');
+        
+        interestsGrid.innerHTML = '';
+        favouritesGrid.innerHTML = '';
         
         interests.forEach(interest => {
           const label = document.createElement('label');
@@ -515,7 +546,7 @@
         
         return hasLetters && hasMinLength && notJustNumbers && notKeysmash;
       }
-      
+
       function isValidGoalInput(text) {
         const basicValid = isValidInput(text);
         if (!basicValid) return false;
@@ -526,19 +557,31 @@
         const questionWordsOnly = /^(what|why|how|when|where|who)\??$/i.test(text.trim());
         if (questionWordsOnly) return false;
         
-        const tooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(text);
-        if (tooManyConsonants) return false;
-        
         return true;
       }
 
-      // API CALL #1: Generate unsettling question
+      function generateAuthorName() {
+        const firstNames = ['Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor'];
+        const lastNames = ['Chen', 'Rodriguez', 'Kim', 'Patel', 'Johnson', 'Martinez'];
+        return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+      }
+
+      // ============================================
+      // API CALL #1: Generate Unsettling Question
+      // ============================================
+
       async function generateUnsettlingQuestion() {
         const apiKey = HypertextCore.getApiKey();
         if (!apiKey) {
           console.log('No API key, using fallback question');
           return "What's something you've been meaning to do but keep putting off?";
         }
+
+        const currentTime = new Date().toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit', 
+          hour12: true 
+        });
 
         const prompt = `Generate a single unsettling question (12-20 words) that:
 - Feels like it knows something about the user it shouldn't
@@ -549,7 +592,7 @@
 - Uses "you" or "your"
 - Tone: Like a voice that's been watching
 
-Current time: 3:39 AM in Manila, Philippines
+Current time: ${currentTime} in Manila, Philippines
 
 Return ONLY the question, no quotes, no explanation.`;
 
@@ -564,7 +607,10 @@ Return ONLY the question, no quotes, no explanation.`;
         }
       }
 
-      // API CALL #2: Chatbot response (ONE TIME ONLY)
+      // ============================================
+      // API CALL #2: Chatbot Response (ONE TIME ONLY)
+      // ============================================
+
       async function generateChatbotResponse(userMessage) {
         const apiKey = HypertextCore.getApiKey();
         if (!apiKey || hasUsedChatbotAPI) {
@@ -589,7 +635,10 @@ Be helpful and conversational. Keep it brief.`;
         }
       }
 
-      // API CALL #3: Generate article titles with enhanced goals
+      // ============================================
+      // API CALL #3: Generate Article Titles
+      // ============================================
+
       async function generateArticlesWithAPI() {
         addMessage("Great! I'm all set up now. Let me find some articles that might interest you...");
         
@@ -610,18 +659,21 @@ Be helpful and conversational. Keep it brief.`;
 
 Extract their goal and transform it into 3 different article title variations.
 
-Transform the goal into a professional, capitalized phrase (2-4 words).
+First, transform the goal into a professional, capitalized phrase (2-4 words).
 
 Examples:
 "sleep better" → "Restorative Sleep Quality"
 "be happy" → "Lasting Inner Peace"
 "exercise more" → "Peak Physical Fitness"
 "stop scrolling" → "Digital Wellness Mastery"
+"finish my thesis" → "Academic Achievement"
 
 Then create 3 article titles using this format:
 1. Why [Interest] Fans Struggle With [Enhanced Goal]
 2. 10 Signs You're Avoiding [Enhanced Goal] (But Don't Know It Yet)
 3. If You're a Fan of [Interest] and Can't [Enhanced Goal], Read This
+
+Use these interests: ${userInterests.join(', ')}
 
 Return in this exact format:
 ENHANCED_GOAL: [enhanced goal phrase]
@@ -639,13 +691,28 @@ TITLE3: [title 3]`;
           const title2 = lines.find(l => l.startsWith('TITLE2:'))?.split(':')[1]?.trim();
           const title3 = lines.find(l => l.startsWith('TITLE3:'))?.split(':')[1]?.trim();
           
+          console.log('Enhanced goal:', enhancedGoal);
+          console.log('Titles:', [title1, title2, title3]);
+          
           // Save enhanced goal
           HypertextCore.saveUserData('enhancedGoal', enhancedGoal);
           
           generatedArticles = [
-            { title: title1 || `Why ${userInterests[0]} Fans Struggle With ${enhancedGoal}`, hook: 'This article knows more about you than you think.', author: generateAuthorName() },
-            { title: title2 || `10 Signs You're Avoiding ${enhancedGoal}`, hook: 'You've been here before, haven't you?', author: generateAuthorName() },
-            { title: title3 || `If You Love ${userInterests[0]} But Can't ${enhancedGoal}`, hook: 'The pattern is more predictable than you think.', author: generateAuthorName() }
+            { 
+              title: title1 || `Why ${userInterests[0]} Fans Struggle With ${enhancedGoal}`, 
+              hook: 'This article knows more about you than you think.', 
+              author: generateAuthorName() 
+            },
+            { 
+              title: title2 || `10 Signs You're Avoiding ${enhancedGoal}`, 
+              hook: 'You've been here before, haven't you?', 
+              author: generateAuthorName() 
+            },
+            { 
+              title: title3 || `If You Love ${userInterests[0]} But Can't ${enhancedGoal}`, 
+              hook: 'The pattern is more predictable than you think.', 
+              author: generateAuthorName() 
+            }
           ];
           
           HypertextCore.saveUserData('articlePreviews', generatedArticles);
@@ -671,14 +738,9 @@ TITLE3: [title 3]`;
         displayArticles();
       }
 
-      function generateAuthorName() {
-        const firstNames = ['Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor'];
-        const lastNames = ['Chen', 'Rodriguez', 'Kim', 'Patel', 'Johnson', 'Martinez'];
-        return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-      }
-
       function displayArticles() {
-        sidebarContent.innerHTML = '<h3>For You</h3>';
+        document.getElementById('sidebarTitle').textContent = 'For You';
+        sidebarContent.innerHTML = '';
         
         generatedArticles.forEach((article, index) => {
           const articleDiv = document.createElement('div');
@@ -699,6 +761,10 @@ TITLE3: [title 3]`;
           addMessage("I found 3 articles that might interest you. Check the sidebar!");
         }, 1500);
       }
+
+      // ============================================
+      // MESSAGE HANDLER
+      // ============================================
 
       async function handleSend() {
         const text = userInput.value.trim();
@@ -737,11 +803,11 @@ TITLE3: [title 3]`;
             addMessage("Thank you for sharing! This helps me understand you better.");
             
             // API CALL #1: Generate unsettling question
-            const unsettlingQuestion = await generateUnsettlingQuestion();
+            generatedUnsettlingQuestion = await generateUnsettlingQuestion();
             
             setTimeout(() => {
               currentStage = 'userGoals';
-              addMessage(unsettlingQuestion);
+              addMessage(generatedUnsettlingQuestion);
             }, 1000);
           }, 500);
           
@@ -749,7 +815,9 @@ TITLE3: [title 3]`;
           if (!isValidGoalInput(text)) {
             setTimeout(() => {
               addMessage("ChatBOT only works with natural language. Please provide a meaningful response.");
-              addMessage("Let me ask again: What's something you've been meaning to do but keep putting off?");
+              setTimeout(() => {
+                addMessage(generatedUnsettlingQuestion || "What's something you've been meaning to do but keep putting off?");
+              }, 500);
             }, 500);
           } else {
             HypertextCore.setUserGoals(text);
@@ -791,24 +859,16 @@ TITLE3: [title 3]`;
         return false;
       }
 
-      function isValidGoalInput(text) {
-        const basicValid = isValidInput(text);
-        if (!basicValid) return false;
-        
-        const wordCount = text.trim().split(/\s+/).length;
-        if (wordCount < 2) return false;
-        
-        const questionWordsOnly = /^(what|why|how|when|where|who)\??$/i.test(text.trim());
-        if (questionWordsOnly) return false;
-        
-        const tooManyConsonants = /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(text);
-        if (tooManyConsonants) return false;
-        
-        return true;
-      }
-
       // Make handleSend available globally
       window.handleSend = handleSend;
+
+      // Enter key handler
+      userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSend();
+        }
+      });
     }
   </script>
 </body>
